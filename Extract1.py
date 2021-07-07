@@ -3,9 +3,13 @@ import os
 import re
 from docx import Document
 from collections import OrderedDict
+from datetime import datetime
+from dateutil import parser
+from datetime import timedelta
+
 
 #path docx file
-file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN0000__MAI THỊ LOAN _26062021_VIỆN.docx'
+file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/HUYỆN HÓC MÔN/BN0000_HM_LÊ THỊ HOÀNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
 file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
@@ -20,24 +24,37 @@ file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 # document = Document(file_path)
 
 date_regex = "[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}"
+prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:lần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
 BN_regex = "(BN ?\d+)|(BN ([A-Z]+[a-áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵ]* *){1,4})"
 def extract_Ngay_duong_tinh(paragraph):
-    regex = "(Nhận thông tin lúc)"
-    regex = re.compile(regex)
+    regex = "(?:kết quả.*?dương tính[^\.]+?"+date_regex+")|(?:"+date_regex+"[^\./]+kết quả.*?dương tính)"
+    regex = re.compile(regex,flags=re.I)
     list_match = None
     if regex.search(paragraph.text):
         # list_match = [m for m in regex.findall(paragraph.text)]
         # print(list_match)
-        regex = re.compile(date_regex)
         list_match = regex.findall(paragraph.text)
-        if len(list_match) == 0:
-            regex = re.compile("ngày ?\d{1,2} ?tháng ?\d{1,2} ?năm ?\d{4}")
-            list_match = regex.findall(paragraph.text)
-            # print('hey',list_match)
-            if len(list_match) != 0:
-                list_match = list_match[0].split()
-                info = list_match[1]+'/'+list_match[3]+'/'+list_match[5]
-                return info
+        print('ngay_duong_tinh',list_match)
+        for match in list_match:
+            arr = re.compile(date_regex).findall(match)
+        # list_match = list(OrderedDict.fromkeys(list_match))
+        return arr[-1]
+    else:
+        regex_ngay_lay_mau = re.compile(prefix_date_regex)
+        if regex_ngay_lay_mau.search(paragraph.text):
+            arr = extract_Ngay_lay_mau(paragraph)
+            print('arr',arr[-1])
+            if(len(arr[-1])<= 2):
+                time = datetime.strptime(arr[-1],'%d') + timedelta(days=1)
+                return time.strftime('%d')
+            elif (len(arr[-1])<=5):
+                time = datetime.strptime(arr[-1], '%d/%m') + timedelta(days=1)
+                return time.strftime('%d/%m')
+                # return time + datetime.timedelta(days=1)
+            else:
+                time = datetime.strptime(arr[-1], '%d/%m/%Y') + timedelta(days=1)
+                return time.strftime('%d/%m/%Y')
+
     return list_match
 def extract_Dich_te(paragraph):
     regex = "([Dd]ịch [Tt]ễ)"
@@ -51,14 +68,16 @@ def extract_Dich_te(paragraph):
         return paragraph.text
     return None
 def extract_Ngay_lay_mau(paragraph):
-    regex = "([Dd]ương tính)"
-    regex = re.compile(regex)
-    list_match = []
+    # regex = "([Dd]ương tính)"
+    regex = re.compile(prefix_date_regex)
+    arr = []
     if regex.search(paragraph.text):
-        regex = re.compile(date_regex)
+        # regex = re.compile(prefix_date_regex)
         list_match = regex.findall(paragraph.text)
-        list_match = list(OrderedDict.fromkeys(list_match))
-        return list_match
+        print('ngay_lay_mau',list_match)
+        for match in list_match:
+            arr.extend(re.compile(date_regex).findall(match))
+        return arr
     return None
 def extract_Tiep_xuc_ca_duong_tinh(paragraph):
     regex = "([Dd]ương tính)"
@@ -100,7 +119,7 @@ def single_patient(document):
             Dich_te.append(extract_Dich_te(paragraph))
         if extract_Ngay_lay_mau(paragraph) != None:
             # print(extract_Ngay_lay_mau(paragraph))
-            Ngay_lay_mau = extract_Ngay_lay_mau(paragraph)
+            Ngay_lay_mau.extend(extract_Ngay_lay_mau(paragraph))
         if extract_Tiep_xuc_ca_duong_tinh(paragraph) != None:
             # print(extract_Tiep_xuc_ca_duong_tinh(paragraph))
             Tiep_xuc_ca_duong_tinh = extract_Tiep_xuc_ca_duong_tinh(paragraph)
@@ -149,7 +168,7 @@ with open(file_path, 'r', encoding= 'utf-8') as f:
         print('\n',single_patient(document),'\n')
         print(i)
         i+=1
-# document = Document(file_path)
+document = Document(file_path)
 # print(single_patient(document))
 
 
