@@ -22,10 +22,10 @@ def cleanData(dict):
     cleanedDict["namSinh"] = dict["namSinh"][0][-4:]
     cleanedDict["gioiTinh"] = dict["gioiTinh"][0][1:][0]
 
-    if len(dict["CMND"])>10:
-        cleanedDict["CMND"] = dict["CMND"][0]
+    if len(dict["CMND"][0][0]) > 8:
+        cleanedDict["CMND"] = re.findall('[0-9]+', dict["CMND"][0][0])[0]
     else: 
-        cleanedDict["CMND"]=""
+        cleanedDict["CMND"] =""
 
     startIndex = dict["quocTich"][0][0].find(":")
     cleanedDict["quocTich"] = dict["quocTich"][0][0][startIndex+1:]
@@ -39,7 +39,7 @@ def getPersonalInformationDetail(text):
         "maBN":"(BN\s?[0-9]+)",
         "namSinh":"(sinh năm:? \d{4})",
         "gioiTinh":"(\s?(nam|nữ|NAM|NỮ|Nam|Nữ))",
-        "CMND":"(\d{11,})",
+        "CMND":"(((nhân dân)|(CCCD)):\s?\d{8,})",
         "quocTich": "(tịch: ([a-zắằẳẵặăấầẩẫậâáàãảạđếềểễệêéèẻẽẹíìỉĩịốồổỗộôớờởỡợơóòõỏọứừửữựưúùủũụýỳỷỹỵA-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ\s])+)",
         "SDT":"(\d{4}.?\d{3}.?\d{3})"
     }
@@ -52,7 +52,7 @@ def getPersonalInformationDetail(text):
 
 if __name__ == '__main__':
     #path docx file
-    file_path = r'C:\Users\TRANCONGMINH\Covid19-IE\BÁO CÁO FILE WORD\BC CHUỖI CHƯA XÁC ĐỊNH\BN00000_NGUYỄN VĂN TÔN_29062021_Nhóm 3.docx'
+    file_path = r'C:\Users\TRANCONGMINH\Covid19-IE\BÁO CÁO FILE WORD\BC CHUỖI HỘI THÁNH - NHÓM 4\BN6298_LÊ THIÊN ÂN HỒNG.docx'
     document = docx.Document(file_path)
     dict = getPersonalInformation(document)
     print(dict)
