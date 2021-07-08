@@ -23,9 +23,11 @@ file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 #create document object
 # document = Document(file_path)
 
+entry_dichte = False
 VN_regex_cap = "ẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ"
 VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữự"
-date_regex = "[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}"
+# date_regex = "[0-9]{1,2}/[0-9]{1,2}(?:\/[0-9]{4})?"
+date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}(?:\/[0-9]{4})?"
 prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
 BN_regex = "(?:BN ?\d+)|(?:BN (?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN (?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
@@ -45,6 +47,7 @@ def extract_Ngay_duong_tinh(paragraph):
         return arr[-1]
     else:
         regex_ngay_lay_mau = re.compile(prefix_date_regex)
+        # regex_check = re.compile('')
         if regex_ngay_lay_mau.search(paragraph.text):
             arr = extract_Ngay_lay_mau(paragraph)
             print('arr',arr[-1])
@@ -60,16 +63,37 @@ def extract_Ngay_duong_tinh(paragraph):
                 return time.strftime('%d/%m/%Y')
 
     return list_match
+# def extract_Dich_te(paragraph):
+#     regex = "([Dd]ịch [Tt]ễ)"
+#     regex1 = "^\+ ?[^A-Za-z]"
+#     regex = re.compile(regex)
+#     regex1 = re.compile(regex1)
+#     if regex.search(paragraph.text):
+#         info = paragraph.text.split(':,')
+#         return info[-1].strip()
+#     elif regex1.search(paragraph.text):
+#         return paragraph.text
+#     return None
 def extract_Dich_te(paragraph):
-    regex = "([Dd]ịch [Tt]ễ)"
-    regex1 = "^\+ ?[^A-Za-z]"
+    regex = "[Dd]ịch [Tt]ễ:?.*"
     regex = re.compile(regex)
-    regex1 = re.compile(regex1)
-    if regex.search(paragraph.text):
-        info = paragraph.text.split(':,')
-        return info[-1].strip()
-    elif regex1.search(paragraph.text):
-        return paragraph.text
+    global entry_dichte
+    if (regex.search(paragraph.text) != None )| entry_dichte:
+        if re.compile('\n').search(paragraph.text):
+            print("co dau xuong dong")
+            if re.compile('[+]').search(paragraph.text):
+                entry_dichte = True
+                if entry_dichte:
+                    return paragraph.text
+                else:
+                    return None
+            else:
+                entry_dichte = False
+                return paragraph.text
+        else:
+            if(paragraph.text.find(':')):
+                iter = paragraph.text.find(':')
+                return paragraph.text[iter+1:].strip()
     return None
 def extract_Ngay_lay_mau(paragraph):
     # regex = "([Dd]ương tính)"
@@ -84,7 +108,7 @@ def extract_Ngay_lay_mau(paragraph):
         return arr
     return None
 def extract_Tiep_xuc_ca_duong_tinh(paragraph):
-    regex = "([Dd]ương tính)"
+    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)"
     # ([Tt]iếp xúc)
     regex = re.compile(regex)
     if regex.search(paragraph.text):
@@ -180,3 +204,15 @@ document = Document(file_path)
 # regex = re.compile(BN_regex)
 # list_match = regex.findall('Ngày lấy mẫu xét nghiệm: lấy mẫu lần 1 vào trưa ngày 21/06/2021 tại KCL là  trường học quận 1 (BN không biết tên KCL và địa chỉ) do tiếp xúc gần với BN12399 Lê Thị Ngọc Hương.')
 # print(list_match)
+
+def extract_Dich_te(paragraph):
+    regex = "[Dd]ịch [Tt]ễ:?.*"
+    regex = re.compile(regex)
+    if regex.search(paragraph.text):
+        if re.compile('\n').search(paragraph.text):
+            return None
+        else:
+            if(paragraph.text.find(':')):
+                iter = paragraph.text.find(':')
+                return paragraph.text[iter:].strip()
+    return None
