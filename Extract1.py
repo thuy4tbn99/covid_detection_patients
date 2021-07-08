@@ -23,9 +23,13 @@ file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 #create document object
 # document = Document(file_path)
 
+VN_regex_cap = "ẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ"
+VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữự"
 date_regex = "[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}"
-prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:lần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
-BN_regex = "(BN ?\d+)|(BN ([A-Z]+[a-áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵ]* *){1,4})"
+prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
+BN_regex = "(?:BN ?\d+)|(?:BN (?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN (?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
+
+
 def extract_Ngay_duong_tinh(paragraph):
     regex = "(?:kết quả.*?dương tính[^\.]+?"+date_regex+")|(?:"+date_regex+"[^\./]+kết quả.*?dương tính)"
     regex = re.compile(regex,flags=re.I)
@@ -84,9 +88,10 @@ def extract_Tiep_xuc_ca_duong_tinh(paragraph):
     # ([Tt]iếp xúc)
     regex = re.compile(regex)
     if regex.search(paragraph.text):
-        regex = re.compile(BN_regex)
-        list_match = regex.findall(paragraph.text)
+        list_match = re.compile(BN_regex).findall(paragraph.text)
         # list_match = list(OrderedDict.fromkeys(list_match))
+        print (paragraph.text)
+        print('Tiep xuc',list_match)
         if len(list_match) == 0:
             return ['Chua ro nguon lay']
         else:
