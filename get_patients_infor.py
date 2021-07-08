@@ -353,7 +353,7 @@ def _get_patients_infor(directory_path):
 
     count = 0
     arr_patients_infor = []
-    for file_path in arr_path_multi[:100]:
+    for file_path in arr_path_multi[:]:
         try:
             print('file_path', file_path)
 
