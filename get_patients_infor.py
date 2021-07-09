@@ -386,7 +386,7 @@ def _get_multiple_patients_infor(path):
     categorizer_dict = categorizer.categorize(directory_path)
     arr_path_multi = categorizer_dict['normal_multiple']
 
-    for path in arr_path_multi[:100]:
+    for path in arr_path_multi[:]:
         print('path_file:', path)
         arr_BN = split_multiple_patients.split_normal_multiple(path)
         for BN in arr_BN:

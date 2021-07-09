@@ -29,19 +29,31 @@ def get_all_document(directory_path):
     return file_paths
 
 def check_document_type(document_path):
+    _, file_name = os.path.split(document_path)
+    BN_count_filename = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
+    
+    patient_count_filename = 0
+    i = 0
+    for name in  re.finditer(r"(?<=_)((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5}))(?=_)", file_name):
+        if ' ' in name.group().split():
+            patient_count_filename+=1
     document_string = docx_to_string(document_path).lower()
     #only normal type files contain this string
     n = document_string.find("báo cáo nhanh thông tin về")
     pattern = re.compile(r"(?<=báo cáo nhanh thông tin về) +\d+ +((?=trường hợp)|(?=bệnh nhân))")
     if n >= 0:
-        patient_num_search = re.search(pattern, document_string)
-        if patient_num_search:
-            patient_num_string = patient_num_search.group().strip()
+        patient_count = document_string.count("thông tin ca bệnh")
+        found_patient_num = re.search(pattern, document_string)
+        if found_patient_num:
+            patient_num_string = found_patient_num.group().strip() 
             try:
                 patient_num = int(patient_num_string)
             except:
                 return document_type.OTHERS
-            if patient_num >= 2:
+            # if int(patient_count == patient_num) + int(patient_count_in_file_name == patient_count) +int(patient_num ==patient_count_in_file_name) < 2:
+            if patient_count != patient_num or BN_count_filename != patient_count:
+                return document_type.OTHERS
+            if patient_num >= 2 or patient_count_filename >= 2:
                 return document_type.NORMAL_MULTIPLE
             return document_type.NORMAL_SINGLE
         return document_type.OTHERS
@@ -81,4 +93,6 @@ def categorize(directory_path):
         "others":others
     }
 if __name__ == "__main__":
-    "do nothing"
+    c = categorize(r"baocao_covid\ BC CHUỖI VỰA VE CHAI")
+    for f in c['normal_single']:
+        print(f)
