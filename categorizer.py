@@ -29,17 +29,23 @@ def get_all_document(directory_path):
     return file_paths
 
 def check_document_type(document_path):
+    directory, file_name = os.path.split(document_path)
+    patient_count_in_file_name = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
     document_string = docx_to_string(document_path).lower()
     #only normal type files contain this string
     n = document_string.find("báo cáo nhanh thông tin về")
     pattern = re.compile(r"(?<=báo cáo nhanh thông tin về) +\d+ +((?=trường hợp)|(?=bệnh nhân))")
     if n >= 0:
-        patient_num_search = re.search(pattern, document_string)
-        if patient_num_search:
-            patient_num_string = patient_num_search.group().strip()
+        patient_count = document_string.count("thông tin ca bệnh")
+        found_patient_num = re.search(pattern, document_string)
+        if found_patient_num:
+            patient_num_string = found_patient_num.group().strip() 
             try:
                 patient_num = int(patient_num_string)
             except:
+                return document_type.OTHERS
+            # if int(patient_count == patient_num) + int(patient_count_in_file_name == patient_count) +int(patient_num ==patient_count_in_file_name) < 2:
+            if patient_count != patient_num or patient_count_in_file_name != patient_count:
                 return document_type.OTHERS
             if patient_num >= 2:
                 return document_type.NORMAL_MULTIPLE
@@ -81,4 +87,6 @@ def categorize(directory_path):
         "others":others
     }
 if __name__ == "__main__":
-    "do nothing"
+    c = categorize(r"baocao_covid\ BC CHUỖI VỰA VE CHAI")
+    for f in c['normal_single']:
+        print(f)
