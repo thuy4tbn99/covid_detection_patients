@@ -366,19 +366,13 @@ def _get_single_patient_infor(document_string):
         patient_infor.update(location_infor)
         patient_infor.update(history_move_infor)
 
-        print(patient_infor)
+        # print(patient_infor)
     except:
         print('---> error: ', file_path)
 
   
-    # save to json
-    # path_save = 'patiens_infor_' + directory_path +'.json'
-    # with open(path_save, "w", encoding='utf-8') as write_file:
-    #     for patient_infor in arr_patients_infor:
-    #         json.dump(patient_infor, write_file, ensure_ascii=False)
-    #         write_file.write('\n')
-    # print("Done writing JSON serialized Unicode Data as-is into file")
-    return
+
+    return patient_infor
 
 
 import split_multiple_patients
@@ -386,13 +380,24 @@ def _get_multiple_patients_infor(path):
     categorizer_dict = categorizer.categorize(directory_path)
     arr_path_multi = categorizer_dict['normal_multiple']
 
+    arr_multiple_patients_infor = []
     for path in arr_path_multi[:]:
         print('path_file:', path)
         arr_BN = split_multiple_patients.split_normal_multiple(path)
+        patiens_infor = []
         for BN in arr_BN:
-            tmp = _get_single_patient_infor(BN)
-            print(tmp)
-            print('-'*100)
+            patient_inf = _get_single_patient_infor(BN)
+            # print('-'*100)
+            patiens_infor.append(patient_inf)
+        arr_multiple_patients_infor.append(patiens_infor)
+    # print(arr_multiple_patients_infor)
+    # save to json
+    path_save = 'multiple_patiens_infor_' + directory_path +'.json'
+    with open(path_save, "w", encoding='utf-8') as write_file:
+        for patient_infor in arr_multiple_patients_infor:
+            json.dump(patient_infor, write_file, ensure_ascii=False)
+            write_file.write('\n')
+    print("Done writing JSON serialized Unicode Data as-is into file")
 
     return
 
