@@ -2,6 +2,7 @@ import docx
 import re
 import os
 from enum import Enum
+import json
 
 class document_type(Enum):
     NORMAL_SINGLE = 1
@@ -85,13 +86,19 @@ def categorize(directory_path):
             quick_report2.append(path)
         else:
             others.append(path)
-    return {
+    
+    path_json_return = {
         "normal_single":normal_single,
         "normal_multiple":normal_multiple,
         "quick_report": quick_report,
         "quick_report2":quick_report2,
         "others":others
     }
+
+    with open('./split_file_path.json', 'w', encoding='utf-8') as write_file:
+        json.dump(path_json_return, write_file, ensure_ascii=False)
+
+    return path_json_return
 if __name__ == "__main__":
     c = categorize(r"baocao_covid\ BC CHUỖI VỰA VE CHAI")
     for f in c['normal_single']:
