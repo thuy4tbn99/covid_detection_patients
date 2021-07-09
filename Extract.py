@@ -3,70 +3,146 @@ import os
 import re
 from docx import Document
 from collections import OrderedDict
+from datetime import datetime
+from datetime import timedelta
+
 
 #path docx file
-file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_BN0000_01_LƯƠNG THỊ THANH THUÝ_NGUYỄN THỊ LỆ THUỶ_01072021.docx'
+# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/QUẬN TÂN BÌNH/BN000_LÊ THỊ BÍCH TRÂM_30062021.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
-# file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
+file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/HUYỆN HÓC MÔN/BN0000_HM_LÊ THỊ HOÀNG_030721.docx'
+# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_ĐẶNG NGỌC PHƯƠNG_220621_NHÓM 4.docx'
+# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN00000_NGUYÊN THIÊN LỘC_26062021_BẰNG_N3.docx'
+#multi
+# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_BN0000_01_LƯƠNG THỊ THANH THUÝ_NGUYỄN THỊ LỆ THUỶ_01072021.docx'
+
 
 #create document object
-document = Document(file_path)
+# document = Document(file_path)
 
-date_regex = "[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}"
-BN_regex = "BN ?\d+"
+entry_dichte = False
+entry_dichte2 = False
+VN_regex_cap = "ẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ"
+VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữự"
+# date_regex = "[0-9]{1,2}/[0-9]{1,2}(?:\/[0-9]{4})?"
+date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}(?:\/[0-9]{4})?"
+date_regex_check1 = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
+date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
+# date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
+prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
+BN_regex = "(?:BN ?\d+)|(?:BN (?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN (?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
+
+
 def extract_Ngay_duong_tinh(paragraph):
-    regex = "(Nhận thông tin lúc)"
-    regex = re.compile(regex)
+    regex = "(?:kết quả.*?dương tính[^\.]+?"+date_regex+")|(?:"+date_regex+"[^\./]+kết quả.*?dương tính)"
+    regex = re.compile(regex,flags=re.I)
     list_match = None
-    if regex.search(paragraph.text):
-        # list_match = [m for m in regex.findall(paragraph.text)]
-        # print(list_match)
-        regex = re.compile(date_regex)
-        list_match = regex.findall(paragraph.text)
-        if len(list_match) == 0:
-            regex = re.compile("ngày ?\d{1,2} ?tháng ?\d{1,2} ?năm ?\d{4}")
-            list_match = regex.findall(paragraph.text)
-            print('hey',list_match)
-            if len(list_match) != 0:
-                list_match = list_match[0].split()
-                info = list_match[1]+'/'+list_match[3]+'/'+list_match[5]
-                return info
-    return list_match
-def extract_Dich_te(paragraph):
-    regex = "([Dd]ịch [Tt]ễ)"
-    regex = re.compile(regex)
-    if regex.search(paragraph.text):
-        info = paragraph.text.split(':')
-        return info[1].strip()
-def extract_Ngay_lay_mau(paragraph):
-    regex = "([Dd]ương tính)"
-    regex = re.compile(regex)
-    if regex.search(paragraph.text):
-        regex = re.compile(date_regex)
-        list_match = regex.findall(paragraph.text)
-        list_match = list(OrderedDict.fromkeys(list_match))
+    arr = []
+    if entry_dichte:
         return list_match
-def extract_Tiep_xuc_ca_duong_tinh(paragraph):
-    regex = "([Dd]ương tính)"
+    else:
+        if regex.search(paragraph):
+            list_match = regex.findall(paragraph)
+            print('ngay_duong_tinh',list_match)
+            for match in list_match:
+                arr = re.compile(date_regex).findall(match)
+            # list_match = list(OrderedDict.fromkeys(list_match))
+            if len(arr) > 0:
+                return arr[-1]
+            else:
+                return list_match
+        else:
+            regex_ngay_lay_mau = re.compile(prefix_date_regex)
+            if regex_ngay_lay_mau.search(paragraph):
+                arr = extract_Ngay_lay_mau(paragraph)
+                if len(arr) > 0:
+                    print('arr',arr[-1])
+                    if(len(arr[-1])<= 2):
+                        time = datetime.strptime(arr[-1],'%d') + timedelta(days=1)
+                        return time.strftime('%d')
+                    elif (len(arr[-1])<=5):
+                        time = datetime.strptime(arr[-1], '%d/%m') + timedelta(days=1)
+                        return time.strftime('%d/%m')
+                    else:
+                        time = datetime.strptime(arr[-1], '%d/%m/%Y') + timedelta(days=1)
+                        return time.strftime('%d/%m/%Y')
+                else:
+                    return list_match
+    return list_match
+
+def extract_Dich_te(paragraph):
+    regex = "[Dd]ịch [Tt]ễ:?.*"
     regex = re.compile(regex)
-    if regex.search(paragraph.text):
-        regex = re.compile(BN_regex)
-        list_match = regex.findall(paragraph.text)
-        list_match = list(OrderedDict.fromkeys(list_match))
+    global entry_dichte
+    global entry_dichte2
+    # print('entry',entry_dichte)
+    if (regex.search(paragraph) != None ) or entry_dichte:
+        print(entry_dichte)
+        if len(paragraph[paragraph.find(':')+1:].strip()) == 0 or entry_dichte:
+            print("co dau xuong dong")
+            entry_dichte = True
+            if re.compile('[+]').search(paragraph) and entry_dichte:
+                entry_dichte2 = True
+                if entry_dichte:
+                    return paragraph
+                else:
+                    return None
+            else:
+                # print
+                # entry_dichte = False
+                if entry_dichte2:
+                    entry_dichte = False
+                if entry_dichte and entry_dichte2 is False:
+                    if regex.search(paragraph) is None:
+                        entry_dichte = False
+                        return paragraph
+        else:
+            if(paragraph.find(':')):
+                entry_dichte = False
+                iter = paragraph.find(':')
+                return paragraph[iter+1:].strip()
+    return None
+def extract_Ngay_lay_mau(paragraph):
+    # regex = "([Dd]ương tính)"
+    global entry_dichte
+    regex = re.compile(prefix_date_regex)
+    arr = []
+    # print('entry',entry_dichte)
+    if entry_dichte:
+        print('Đang xét dịch tễ')
+    else:
+        if regex.search(paragraph):
+            # regex = re.compile(prefix_date_regex)
+            list_match = regex.findall(paragraph)
+            print('ngay_lay_mau',list_match)
+            for match in list_match:
+                if re.compile(date_regex_check1).search(match):
+                    arr.extend(re.compile(date_regex).findall(match))
+                elif re.compile(date_regex_check2).search(match):
+                    if re.compile('[Nn]gày').search(match):
+                        arr.extend(re.compile(date_regex).findall(match))
+            return arr
+    return None
+def extract_Tiep_xuc_ca_duong_tinh(paragraph):
+    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)"
+    # ([Tt]iếp xúc)
+    regex = re.compile(regex)
+    if regex.search(paragraph):
+        list_match = re.compile(BN_regex).findall(paragraph)
+        # list_match = list(OrderedDict.fromkeys(list_match))
+        print('Tiep xuc',list_match)
         if len(list_match) == 0:
-            return ['Chua ro nguon lay']
+            return None
         else:
             return list_match
-    #     p = paragraph.text.lower()
-    #     a = re.findall(r'[^\sa-zA-Záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ_]', paragraph.text)
-    #     print(a)
+    return None
 
 def single_patient(document):
     Ngay_lay_mau = []
     Ngay_xet_nghiem_duong_tinh = ''
-    Dich_te = ''
+    Dich_te = []
     Tiep_xuc_ca_duong_tinh = []
     i = 0
     Thong_tin_ca_benh = []
@@ -75,61 +151,94 @@ def single_patient(document):
             i += 1
         if i > 0:
             print(paragraph.text)
-            Thong_tin_ca_benh.append(paragraph)
+            Thong_tin_ca_benh.append(paragraph.text)
         if 'Lịch sử đi lại và tiền sử' in paragraph.text:
             i = 0
             break
     # print(Thong_tin_ca_benh)
     for paragraph in Thong_tin_ca_benh:
-        if extract_Ngay_duong_tinh(paragraph) != None:
-            # print(extract_Ngay_duong_tinh(paragraph))
-            Ngay_xet_nghiem_duong_tinh = extract_Ngay_duong_tinh(paragraph)
-        if extract_Dich_te(paragraph) != None:
-            # print(extract_Dich_te(paragraph))
-            Dich_te = extract_Dich_te(paragraph)
-        if extract_Ngay_lay_mau(paragraph) != None:
-            # print(extract_Ngay_lay_mau(paragraph))
-            Ngay_lay_mau = extract_Ngay_lay_mau(paragraph)
-        if extract_Tiep_xuc_ca_duong_tinh(paragraph) != None:
-            # print(extract_Tiep_xuc_ca_duong_tinh(paragraph))
-            Tiep_xuc_ca_duong_tinh = extract_Tiep_xuc_ca_duong_tinh(paragraph)
+
+        res = extract_Dich_te(paragraph)
+        if res != None:
+            Dich_te.append(res)
+
+        res = extract_Ngay_duong_tinh(paragraph)
+        if res != None:
+            Ngay_xet_nghiem_duong_tinh = res
+
+        res = extract_Ngay_lay_mau(paragraph)
+        if res != None:
+            Ngay_lay_mau.extend(res)
+
+        res = extract_Tiep_xuc_ca_duong_tinh(paragraph)
+        if res != None:
+            Tiep_xuc_ca_duong_tinh = res
     return {'Ngay_xet_nghiem_duong_tinh':Ngay_xet_nghiem_duong_tinh,
               'Dich_te':Dich_te,
               'Ngay_lay_mau':Ngay_lay_mau,
             'Tiep_xuc_ca_duong_tinh':Tiep_xuc_ca_duong_tinh
               }
-def multi_patient(document):
-    i = 0
-    documents = []
-    doc = ''
-    for paragraph in document.paragraphs:
-        # print(paragraph.text)
-        if 'Thông tin ca bệnh' in paragraph.text:
-            documents.append(doc)
-            doc = Document()
-            print('changeeeee')
-            continue
-        # print(type(doc))
-        if type(doc) != str:
-            doc.add_paragraph(paragraph.text)
-    # for d in range(1,len(documents)):
-    #     print(len(documents))
-    #     print(single_patient(documents[d]))
-    print(documents[1])
-multi_patient(document)
+
+#
+# def multi_patient(document):
+#     i = 0
+#     documents = []
+#     doc = ''
+#     for paragraph in document.paragraphs:
+#         # print(paragraph)
+#         if 'Thông tin ca bệnh' in paragraph:
+#             documents.append(doc)
+#             doc = Document(docx=None)
+#             print('changeeeee')
+#             continue
+#         # print(type(doc))
+#         if 'Các hoạt động đã triển khai' in paragraph:
+#             documents.append(doc)
+#             break;
+#         if type(doc) != str:
+#             doc.add_paragraph(paragraph)
+#
+#     for d in range(1,len(documents)):
+#         print(len(documents))
+#         print(single_patient(documents[d]))
+    # print(documents[1].paragraphs)
+    # for p in documents[4].paragraphs:
+    #     print(p)
+# multi_patient(document)
 
 
+# run multiple single docx
+i = 1;
+with open(file_path, 'r', encoding= 'utf-8') as f:
+    for line in f:
+        # print(os.path.realpath('./'))path
+        # print(line)
+        path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
+        print('here',path)
+        document = Document(path)
 
+        print('\n',single_patient(document),'\n')
+        print(i)
+        i+=1
 
-# with open(file_path, 'r', encoding= 'utf-8') as f:
-#     for line in f:
-#         # print(os.path.realpath('./'))path
-#         print(line)
-#         path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
-#         print('here',path)
-#         document = Document(path)
-#         print(single_patient(document))
-
+# test single docx
 # document = Document(file_path)
 # print(single_patient(document))
-# multi_patient(document)
+
+
+# regex = re.compile(BN_regex)
+# list_match = regex.findall('Ngày lấy mẫu xét nghiệm: lấy mẫu lần 1 vào trưa ngày 21/06/2021 tại KCL là  trường học quận 1 (BN không biết tên KCL và địa chỉ) do tiếp xúc gần với BN12399 Lê Thị Ngọc Hương.')
+# print(list_match)
+
+# def extract_Dich_te(paragraph):
+#     regex = "[Dd]ịch [Tt]ễ:?.*"
+#     regex = re.compile(regex)
+#     if regex.search(paragraph):
+#         if re.compile('\n').search(paragraph):
+#             return None
+#         else:
+#             if(paragraph.find(':')):
+#                 iter = paragraph.find(':')
+#                 return paragraph[iter:].strip()
+#     return None
+
