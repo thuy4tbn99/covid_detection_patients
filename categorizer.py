@@ -29,8 +29,9 @@ def get_all_document(directory_path):
     return file_paths
 
 def check_document_type(document_path):
-    directory, file_name = os.path.split(document_path)
-    patient_count_in_file_name = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
+    _, file_name = os.path.split(document_path)
+    BN_count_filename = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
+    patient_count_filename = len(re.findall(r"(?<=_)((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5})){3,5}(?=_)", file_name))
     document_string = docx_to_string(document_path).lower()
     #only normal type files contain this string
     n = document_string.find("báo cáo nhanh thông tin về")
@@ -45,9 +46,9 @@ def check_document_type(document_path):
             except:
                 return document_type.OTHERS
             # if int(patient_count == patient_num) + int(patient_count_in_file_name == patient_count) +int(patient_num ==patient_count_in_file_name) < 2:
-            if patient_count != patient_num or patient_count_in_file_name != patient_count:
+            if patient_count != patient_num or BN_count_filename != patient_count:
                 return document_type.OTHERS
-            if patient_num >= 2:
+            if patient_num >= 2 or patient_count_filename >= 2:
                 return document_type.NORMAL_MULTIPLE
             return document_type.NORMAL_SINGLE
         return document_type.OTHERS
