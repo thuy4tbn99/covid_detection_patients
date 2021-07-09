@@ -12,20 +12,21 @@ import categorizer
 
 #-----------------------------------------------------------------------------
 # congminh
-def getPersonalInformation(document):
-    lst=[]
-    for paragraph in document.paragraphs:
-        # print(paragraph.text)
-        lst.append(paragraph.text)
+def getPersonalInformation(document_string):
+    # lst=[]
+    # for paragraph in document.paragraphs:
+    #     # print(paragraph.text)
+    #     lst.append(paragraph.text)
     
-    text = '\n'.join(lst)
-    # print('raw text', text)
-    if text.lower().find('cục y tế dự phòng;') == -1:
-        return {'doc_type': 'baocaonhanh'}
+    text = document_string
+
+    # if text.lower().find('cục y tế dự phòng;') == -1:
+    #     return {'doc_type': 'baocaonhanh'}
     start = text.find("Thông tin ca bệnh")
     if start == -1:
         start = text.find("Nhận thông tin")
     end = text.find("Lịch sử đi lại")
+
 
     dict = getPersonalInformationDetail(text[start:end])
 
@@ -230,10 +231,10 @@ def extract_Ngay_duong_tinh(paragraph):
     regex = "(?:kết quả.*?dương tính[^\.]+?"+date_regex+")|(?:"+date_regex+"[^\./]+kết quả.*?dương tính)"
     regex = re.compile(regex,flags=re.I)
     list_match = None
-    if regex.search(paragraph.text):
+    if regex.search(paragraph):
         # list_match = [m for m in regex.findall(paragraph.text)]
         # print(list_match)
-        list_match = regex.findall(paragraph.text)
+        list_match = regex.findall(paragraph)
         # print('ngay_duong_tinh',list_match)
         for match in list_match:
             arr = re.compile(date_regex).findall(match)
@@ -242,7 +243,7 @@ def extract_Ngay_duong_tinh(paragraph):
     else:
         regex_ngay_lay_mau = re.compile(prefix_date_regex)
         # regex_check = re.compile('')
-        if regex_ngay_lay_mau.search(paragraph.text):
+        if regex_ngay_lay_mau.search(paragraph):
             arr = extract_Ngay_lay_mau(paragraph)
             # print('arr',arr[-1])
             if(len(arr[-1])<= 2):
@@ -262,31 +263,31 @@ def extract_Dich_te(paragraph):
     regex = "[Dd]ịch [Tt]ễ:?.*"
     regex = re.compile(regex)
     global entry_dichte
-    if (regex.search(paragraph.text) != None )| entry_dichte:
-        if re.compile('\n').search(paragraph.text):
+    if (regex.search(paragraph) != None )| entry_dichte:
+        if re.compile('\n').search(paragraph):
             # print("co dau xuong dong")
-            if re.compile('[+]').search(paragraph.text):
+            if re.compile('[+]').search(paragraph):
                 entry_dichte = True
                 if entry_dichte:
-                    return paragraph.text
+                    return paragraph
                 else:
                     return None
             else:
                 entry_dichte = False
-                return paragraph.text
+                return paragraph
         else:
-            if(paragraph.text.find(':')):
-                iter = paragraph.text.find(':')
-                return paragraph.text[iter+1:].strip()
+            if(paragraph.find(':')):
+                iter = paragraph.find(':')
+                return paragraph[iter+1:].strip()
     return None
 
 def extract_Ngay_lay_mau(paragraph):
     # regex = "([Dd]ương tính)"
     regex = re.compile(prefix_date_regex)
     arr = []
-    if regex.search(paragraph.text):
+    if regex.search(paragraph):
         # regex = re.compile(prefix_date_regex)
-        list_match = regex.findall(paragraph.text)
+        list_match = regex.findall(paragraph)
         # print('ngay_lay_mau',list_match)
         for match in list_match:
             arr.extend(re.compile(date_regex).findall(match))
@@ -297,8 +298,8 @@ def extract_Tiep_xuc_ca_duong_tinh(paragraph):
     regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)"
     # ([Tt]iếp xúc)
     regex = re.compile(regex)
-    if regex.search(paragraph.text):
-        list_match = re.compile(BN_regex).findall(paragraph.text)
+    if regex.search(paragraph):
+        list_match = re.compile(BN_regex).findall(paragraph)
         # list_match = list(OrderedDict.fromkeys(list_match))
         # print (paragraph.text)
         # print('Tiep xuc',list_match)
@@ -308,20 +309,21 @@ def extract_Tiep_xuc_ca_duong_tinh(paragraph):
             return list_match
     return None
 
-def single_patient(document):
+def single_patient(document_string):
+    document = document_string.split('\n')
     Ngay_lay_mau = []
     Ngay_xet_nghiem_duong_tinh = ''
     Dich_te = []
     Tiep_xuc_ca_duong_tinh = []
     i = 0
     Thong_tin_ca_benh = []
-    for paragraph in document.paragraphs:
-        if 'Thông tin ca bệnh' in paragraph.text:
+    for paragraph in document:
+        if 'Thông tin ca bệnh' in paragraph:
             i += 1
         if i > 0:
             # print(paragraph.text)
             Thong_tin_ca_benh.append(paragraph)
-        if 'Lịch sử đi lại và tiền sử' in paragraph.text:
+        if 'Lịch sử đi lại và tiền sử' in paragraph:
             i = 0
             break
     # print(Thong_tin_ca_benh)
@@ -347,51 +349,59 @@ def single_patient(document):
 # ----------------------------------------
 # input: directory path
 # output: file json chứa thông tin extract được
-def _get_patients_infor(directory_path):
-    categorizer_dict = categorizer.categorize(directory_path)
-    arr_path_multi = categorizer_dict['normal_single']
+def _get_single_patient_infor(document_string):
 
-    count = 0
-    arr_patients_infor = []
-    for file_path in arr_path_multi[:]:
-        try:
-            print('file_path', file_path)
+    try:
+        # get personal infor
+        personal_infor = getPersonalInformation(document_string)
+        # print('personal infor:', personal_infor)
 
-            # get personal infor
-            document = Document(file_path)
-            personal_infor = getPersonalInformation(document)
+        # get location
+        location_infor = extract_patient_info(document_string)
 
-            # get location
-            document_string = docx_to_string(file_path)
-            location_infor = extract_patient_info(document_string)
+        # lich su
+        history_move_infor = single_patient(document_string)
 
-            # lich su
-            history_move_infor = single_patient(document)
+        patient_infor = personal_infor.copy()
+        patient_infor.update(location_infor)
+        patient_infor.update(history_move_infor)
 
-            patient_infor = personal_infor.copy()
-            patient_infor.update(location_infor)
-            patient_infor.update(history_move_infor)
+        print(patient_infor)
+    except:
+        print('---> error: ', file_path)
 
-            print(patient_infor)
-            arr_patients_infor.append(patient_infor)
-        except:
-            count+=1
-            print('---> error: ', file_path)
-    print('tổng lỗi:' ,count, '\ntổng file:',len(arr_patients_infor))
-
+  
     # save to json
-    path_save = 'patiens_infor_' + directory_path +'.json'
-    with open(path_save, "w", encoding='utf-8') as write_file:
-        for patient_infor in arr_patients_infor:
-            json.dump(patient_infor, write_file, ensure_ascii=False)
-            write_file.write('\n')
-    print("Done writing JSON serialized Unicode Data as-is into file")
+    # path_save = 'patiens_infor_' + directory_path +'.json'
+    # with open(path_save, "w", encoding='utf-8') as write_file:
+    #     for patient_infor in arr_patients_infor:
+    #         json.dump(patient_infor, write_file, ensure_ascii=False)
+    #         write_file.write('\n')
+    # print("Done writing JSON serialized Unicode Data as-is into file")
+    return
+
+
+import split_multiple_patients
+def _get_multiple_patients_infor(path):
+    categorizer_dict = categorizer.categorize(directory_path)
+    arr_path_multi = categorizer_dict['normal_multiple']
+
+    for path in arr_path_multi[:100]:
+        print('path_file:', path)
+        arr_BN = split_multiple_patients.split_normal_multiple(path)
+        for BN in arr_BN:
+            tmp = _get_single_patient_infor(BN)
+            print(tmp)
+            print('-'*100)
+
     return
 
 if __name__ == '__main__':
 
     directory_path = '04-07-2021'
-    _get_patients_infor(directory_path)
+    # _get_patient_infor(directory_path)
+
+    _get_multiple_patients_infor(directory_path)
 
 
 
