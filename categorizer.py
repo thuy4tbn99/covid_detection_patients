@@ -31,7 +31,12 @@ def get_all_document(directory_path):
 def check_document_type(document_path):
     _, file_name = os.path.split(document_path)
     BN_count_filename = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
-    patient_count_filename = len(re.findall(r"(?<=_)((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5})){3,5}(?=_)", file_name))
+    
+    patient_count_filename = 0
+    i = 0
+    for name in  re.finditer(r"(?<=_)((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5}))(?=_)", file_name):
+        if ' ' in name.group().split():
+            patient_count_filename+=1
     document_string = docx_to_string(document_path).lower()
     #only normal type files contain this string
     n = document_string.find("báo cáo nhanh thông tin về")
