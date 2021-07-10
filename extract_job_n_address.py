@@ -34,32 +34,11 @@ def find_job(section_string):
 def find_address(document_string):
     """Return patient's address from patient's info stirng"""
     address = ""
-    pattern = re.compile(r'(?<=Địa chỉ:)[^\n]+|(?<=Địa chỉ nơi ở:)[^\n]+|(?<=Địa chỉ tạm trú:)[^\n]+|(?<=Địa chỉ nơi ở hiện nay:)[^\n]+|(?<=Địa chỉ nơi)[^\n]+|(?<=Địa chỉ nơi ở và nơi làm)[^\n]+|(?<=Địa chỉ nhà:)[^\n]+|')
+    pattern = re.compile(r'(?<=Địa chỉ:)[^\n]+|(?<=Địa chỉ nơi ở:)[^\n]+|(?<=Địa chỉ tạm trú:)[^\n]+|(?<=Địa chỉ nơi ở hiện nay:)[^\n]+|(?<=Địa chỉ nơi)[^\n]+|(?<=Địa chỉ nơi ở và nơi làm)[^\n]+|(?<=Địa chỉ nhà:)[^\n]+')
     if re.search(re.compile(pattern),document_string):
         address = re.findall(pattern, document_string)[0]
     return address
 
-def split_address(address_string):
-    """Split patient's address into street, village, district, provine"""
-    street = ""
-    village = ""
-    district = ""
-    provine = ""
-    district_n_provine = ""
-    village_pattern = re.compile(r'((?<=,)|(xã)|(phường))[^,]*, +((?=q)|(?=huyện)|(?=quận))')
-    district_pattern = re.compile(r'(quận|huyện|q).* +((?=tp)|(?=thành phố))')
-    village_search = re.search(village_pattern,address_string)
-    if village_search:
-        village = village_search.group()
-        street = address_string[:address_string.find(village)]
-        district_n_provine = address_string[address_string.find(village) + len(village):]
-        district_search = re.search(district_pattern, district_n_provine)
-        if district_search:
-            district = district_search.group()
-            provine = district_n_provine[district_n_provine.find(district)+len(district):]
-        else:
-            district = district_n_provine
-    return street, village, district, provine
 def split_address_normal(address_string):
         address_string = address_string.replace('.', '')
         districts = [ 'quận 11','q11', 'quận 12','q12' ,'quận 10','q10','quận 9','q9', 'quận 4','q4' ,   'quận 6','q6',
@@ -121,9 +100,9 @@ def split_address_normal(address_string):
                 break
         return street, village, district, provine
 
-def extract_patient_info(docx_file):
+def extract_patient_info(document_string):
     """"Return a json file which contains patient's information extracted from a word document"""
-    document_string = docx_to_string(docx_file)
+    # document_string = docx_to_string(docx_file)
     patient_info_section = extract_sections(document_string, 1)
     #get patient's job's description
     patient_job = find_job(patient_info_section)
@@ -131,7 +110,7 @@ def extract_patient_info(docx_file):
     patient_address = find_address(patient_info_section).lower()
     street, village, district, provine = split_address_normal(patient_address)
     output = {
-        "file_name": docx_file,
+        # "file_name": docx_file,
         "nghe_nghiep":patient_job,
         "dia chi": patient_address,
         "duong/thon/xom": street,
