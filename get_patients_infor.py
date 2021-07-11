@@ -172,7 +172,6 @@ def find_job_location(job_info):
     
     return job_info, 'NA'
     
-
 def find_address(document_string):
     """Return patient's address from patient's info stirng"""
     address = ""
@@ -416,7 +415,6 @@ def extract_publish_date(directory_path):
 def extract_relative_filepath(file_path):
     file_name = file_path[file_path.rindex('/')+1:]
     
-
 def extract_patient_code_from_filepath(file_path):
     file_name = file_path[file_path.rindex('/')+1:]
     matches = re.compile("(?:BN ?\d+)|(?:Bn ?\d+)").findall(file_name)
@@ -502,7 +500,6 @@ def export_to_excel(patient_infos, publish_date, ofile_path):
     print('### Save data to ', ofile_path)
     df[cols].to_excel(ofile_path, sheet_name=publish_date, index=False)
     
-  
 # Multiple patients
 def extract_multiple_patients(file_path):
     document = Document(file_path)
@@ -524,7 +521,6 @@ def extract_multiple_patients(file_path):
         patient_infos.append(patient_info)
         
     return patient_infos
-
 
 def remove_last_line(s):
     return s[:s.rfind('\n')]
@@ -561,15 +557,10 @@ def extract_patient_infos_from_directory(directory_path):
     patient_infos = []
     ignored_file_paths = []
 
-    # thuytt test quick_report2
-    # for doc_clazz in doc_classes:
-    #     if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
-    #         file_paths = doc_classes['quick_report']
-    #         bao_cao_nhanh.get_personal_information(file_paths)
 
     for doc_clazz in doc_classes:
 
-        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple':
+        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple' and doc_clazz == 'quick_report' and doc_clazz == 'quick_report2':
             ignored_file_paths.extend(doc_classes[doc_clazz])
             continue
         
@@ -580,6 +571,10 @@ def extract_patient_infos_from_directory(directory_path):
             try:
                 print('-'*100, )
                 print('@', file_path)
+
+                if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
+                    patient_infos_from_file = [bao_cao_nhanh.get_personal_information(file_path)]
+                    print('---> quickreport', type(patient_infos_from_file), patient_infos_from_file)
                 
                 if doc_clazz == 'normal_single':
                     patient_infos_from_file = [extract_single_patient(file_path)]

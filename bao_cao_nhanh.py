@@ -1,15 +1,13 @@
 # from typing import final
 import docx
-import os
 import re
-import pandas as pd
 import json
-from collections import OrderedDict
 from datetime import datetime
-from dateutil import parser
 from datetime import timedelta
+import categorizer
 
 def docx_to_string(docx_file):
+    print('baocaonhanh:',docx_file)
     try:
         document = docx.Document(docx_file)
     except:
@@ -329,10 +327,59 @@ def single_patient(document):
               }
 
 
+#----------------
+# mapping
+from datetime import date
+today_date = date.today()
+def infer_age_info(birthyear):
+    age = today_date.year - birthyear
+    age_group = ''
+    if age < 18:
+        return age, '1 (< 18)'
+    elif age <= 40:
+        return age, '2 (18-40)'
+    elif age <= 60:
+        return age, '3 (41-60)'
+    else:
+        return age, '4 (>60)'
+def convert_to_report_format(patient_info_json):
+    mapping_keys = {
+            'publish_date': 'Ngày công bố',
+            'maBN': 'MCB',
+            'hoTen': 'Họ và tên',
+            'CMND': 'CMND',
+            'namSinh': 'Năm sinh',
+            'gioiTinh': 'Giới',
+            'nghe_nghiep': 'Nghề nghiệp',
+            'job_loc': 'Nơi làm việc/học tập',
+            'duong/thon/xom': 'Thôn, xóm, đường(thường trú)',
+            'xa/phuong': 'Xã/Phường(thường trú)',
+            'quan/huyen': 'Quận/Huyện(thường trú)',
+            'tinh/thanhpho': 'Tỉnh/TP(thường trú)',
+            'SDT': 'Số điện thoại [bệnh nhân]',
+            'test_dates': 'Ngày lấy mẫu',
+            'positive_date': 'Ngày xét nghiệm (+)',
+            'positve_case_contact': 'Ca F0 liên quan',
+            'epidemiology': 'Tóm tắt dịch tễ/ Ghi chú'
+    }
+
+    report_json = {}
+    for key in patient_info_json:
+        if key in mapping_keys:
+            if key == 'birthyear' and patient_info_json[key] != '':
+                byear = int(patient_info_json[key])
+                report_json[mapping_keys[key]] = byear
+                report_json['Tuổi'], report_json['Nhóm tuổi'] = infer_age_info(byear)
+            else:
+                report_json[mapping_keys[key]] = patient_info_json[key]
+        else:
+            report_json[key] = patient_info_json[key]
+    return report_json
 
 # ------------------------------------------------------------------------------------------------------------
 #  thông tin cơ bản và địa chỉ
-def get_personal_information(file_paths):
+def get_personal_information(file_path):
+    file_paths = [file_path]
     file_paths = [x.replace('\n', '') for x in file_paths]
     count_number_of_patients = 0
     # tong_truong_bat_duoc la 1 dict chưa thông tin xem có tổng bao nhiêu trường bắt được
@@ -344,7 +391,6 @@ def get_personal_information(file_paths):
         tong_truong_bat_duoc[index]=0
     for index in thong_tin_dia_chi:
         tong_truong_bat_duoc[index]=0
-
     for file_path in file_paths:
         count_number_of_patients +=1
         print(count_number_of_patients)
@@ -366,10 +412,11 @@ def get_personal_information(file_paths):
         personal_information = get_personal_information_detail(text)
         cleaned_personal_information_dict = clean_personal_information(personal_information)
 
+
         #  tổng hợp lại các trường vào 1 dict
         final_info = dict(cleaned_personal_information_dict, **address_info)
+        final_info = convert_to_report_format(final_info) # convert format
         print(final_info)
-        print()
         print(file_path) # in ra đường dẫn của file
 
         # thống kê xem có những trường nào bắt được và trường nào không bắt được
@@ -387,19 +434,23 @@ def get_personal_information(file_paths):
             else:
                 tong_truong_bat_duoc[index] +=1
 
-        print("cac truong khong bat duoc: ", cac_truong_khong_bat_duoc)
-        print()
-        print()
+        print("cac truong khong bat duoc: ", cac_truong_khong_bat_duoc,'\n')
 
     length_of_total_file = len(file_paths)
     for index in tong_truong_bat_duoc:
         print(index, ":", tong_truong_bat_duoc[index],'/' ,length_of_total_file)
 
-if __name__ == '__main__':
-    #đường dẫn các file báo cáo nhanh
-    quick_report =r'C:\Users\TRANCONGMINH\Covid19-IE\splitted_files_minh\quick_report.txt'
-    quick_report2 = r'C:\Users\TRANCONGMINH\Covid19-IE\splitted_files_minh\quick_report2.txt'
+    return final_info
 
-    with open(quick_report,'r', encoding="utf8") as f:
-        lines = f.readlines()
-    get_personal_information(lines)
+
+
+
+if __name__ == '__main__':
+
+    doc_classifier = categorizer.DocumentClassifier()
+    doc_classes, doc_sizes = doc_classifier.categorize('./04-07-2021')
+
+    file_path = doc_classes['quick_report']
+    # with open(quick_report_paths,'r', encoding="utf8") as f:
+    #     lines = f.readlines()
+    get_personal_information(file_path)
