@@ -3,7 +3,7 @@ import os
 import re
 import pandas as pd
 import json
-
+import bao_cao_nhanh
 import argparse
 
 from collections import OrderedDict
@@ -504,8 +504,15 @@ def extract_patient_infos_from_directory(directory_path):
     count = 0
     patient_infos = []
     ignored_file_paths = []
-    
+
+    # thuytt
     for doc_clazz in doc_classes:
+        if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
+            file_paths = doc_classes['quick_report']
+            bao_cao_nhanh.get_personal_information(file_paths)
+    '''
+    for doc_clazz in doc_classes:
+
         if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple':
             ignored_file_paths.extend(doc_classes[doc_clazz])
             continue
@@ -553,6 +560,8 @@ def extract_patient_infos_from_directory(directory_path):
         with open(directory_path + "_review.txt", 'w') as out:
             for file_path in ignored_file_paths:
                 out.write("{}\n".format(file_path))
+     '''
+     
             
 if __name__ == '__main__':
     global args
