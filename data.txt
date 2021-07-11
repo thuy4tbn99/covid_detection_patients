@@ -1,0 +1,1 @@
+{"Ngay_xet_nghiem_duong_tinh": "24/06/2021", "Dich_te": ["BN hưu trí, ít đi lại và không tiếp xúc với nhiều người."], "Ngay_lay_mau": ["24/06/2021"], "Tiep_xuc_ca_duong_tinh": [], "Nguon lay": "Cách ly"}

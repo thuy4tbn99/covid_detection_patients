@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import os
+import json
+from pathlib import Path, PureWindowsPath
 import re
 from docx import Document
 from collections import OrderedDict
@@ -11,7 +14,8 @@ from datetime import timedelta
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/QUẬN TÂN BÌNH/BN000_LÊ THỊ BÍCH TRÂM_30062021.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
-file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
+# file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
+file_path = '/Users/user/Downloads/splitted_files_minh/normal_single.txt'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/HUYỆN HÓC MÔN/BN0000_HM_LÊ THỊ HOÀNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_ĐẶNG NGỌC PHƯƠNG_220621_NHÓM 4.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN00000_NGUYÊN THIÊN LỘC_26062021_BẰNG_N3.docx'
@@ -26,14 +30,16 @@ entry_dichte = False
 entry_dichte2 = False
 da_cach_ly = False
 VN_regex_cap = "ẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ"
-VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữự"
+VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỹỷyđ"
 # date_regex = "[0-9]{1,2}/[0-9]{1,2}(?:\/[0-9]{4})?"
 date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}(?:\/[0-9]{4})?"
 date_regex_check1 = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
 date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
 # date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
 prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?'+date_regex+')'
-BN_regex = "(?:BN ?\d+)|(?:BN (?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN (?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
+prefix_date_regex2 = ''
+BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
+BN_regex2 = "(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
 def docx_to_string(docx_file):
     try:
@@ -41,6 +47,7 @@ def docx_to_string(docx_file):
         document = Document(docx_file)
     except:
         print("Unable to read file")
+
         return ""
     return "\n".join([paragraph.text for paragraph in document.paragraphs])
 def extract_sections(document_string, section):
@@ -100,7 +107,7 @@ def extract_Ngay_duong_tinh(document_string):
     return list_match
 
 def extract_Dich_te(document_string):
-    regex = "[Dd]ịch [Tt]ễ:?.*"
+    regex = "[Dd]ịch [Tt]ễ.*:.*"
     regex = re.compile(regex)
     global entry_dichte
     global entry_dichte2
@@ -118,12 +125,17 @@ def extract_Dich_te(document_string):
             else:
                 # print
                 # entry_dichte = False
+                print(entry_dichte2)
                 if entry_dichte2:
+                    entry_dichte2 = False
                     entry_dichte = False
                 if entry_dichte and entry_dichte2 is False:
                     if regex.search(document_string) is None:
                         entry_dichte = False
                         return document_string
+                    else:
+                        entry_dichte = True
+                        return None
         else:
             if(document_string.find(':')):
                 entry_dichte = False
@@ -148,33 +160,43 @@ def extract_Ngay_lay_mau(document_string):
                 if re.compile(date_regex_check1).search(match):
                     arr.extend(re.compile(date_regex).findall(match))
                 elif re.compile(date_regex_check2).search(match):
-                    if re.compile('[Nn]gày').search(match):
+                    if re.compile("[Nn]gày").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return arr
     return None
 def extract_Tiep_xuc_ca_duong_tinh(document_string):
-    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)"
+    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Ll]iên quan)"
     # ([Tt]iếp xúc)
     regex = re.compile(regex)
     if regex.search(document_string):
-        list_match = re.compile(BN_regex).findall(document_string)
-        # list_match = list(OrderedDict.fromkeys(list_match))
-        print('Tiep xuc',list_match)
-        if len(list_match) == 0:
-            return None
-        else:
-            return list_match
+        if re.compile("[Bb]ệnh ?[Nn]hân:").search(document_string) is None:
+            list_match = re.compile(BN_regex+"|"+BN_regex2).findall(document_string)
+            # list_match = list(OrderedDict.fromkeys(list_match))
+            print('Tiep xuc',list_match)
+            if len(list_match) == 0:
+                return None
+            else:
+                return list_match
     return None
 def extract_Nguon_lay_nhiem(document_string):
-    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|(?:(?:chuyển.*)?cách ly.*(?:do))"
+    regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
+    regex = "(?:[Pp]hong [Tt][oỏ][aả])|(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|"+regex_cach_ly
     regex = re.compile(regex)
     global da_cach_ly
     if regex.search(document_string) and da_cach_ly is False:
         print('Nguon lay',document_string)
-        if re.compile(BN_regex).search(document_string):
+        if re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Tt]rong khu cách ly)|(?:F1)|(?:F0)|"+regex_cach_ly).search(document_string):
+            print('k')
             return 'Cách ly'
-        elif re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Pp]hong [Tt][oỏ][aả])|(?:[Tt]rong khu cách ly)|(?:(?:chuyển.*)?cách ly.*(?:do))").search(document_string):
-            print('Daaaaaaa')
+        elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(document_string):
+            # print(re.compile("(?:[Pp]hong [Tt][oỏ][aả])").findall(document_string))
+            print('e')
+            if re.compile("(?:[Gg]ần) (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(document_string) is None:
+                return 'Cách ly'
+            elif re.compile("trong (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(document_string):
+                return 'Cách ly'
+        elif re.compile(BN_regex+"|"+BN_regex2).search(document_string):
+            print('d')
             return 'Cách ly'
     return None
 def single_patient(document_string):
@@ -232,19 +254,28 @@ def single_patient(document_string):
 
 # # run multiple single docx
 i = 1;
+output = []
 with open(file_path, 'r', encoding= 'utf-8') as f:
     for line in f:
-        # print(os.path.realpath('./'))path
-        # print(line)
-        path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
-        print('here',path)
-        document_string = docx_to_string(path)
-        print('\n',single_patient(document_string),'\n')
+        path = PureWindowsPath(line)
+        path = Path(path)
+        path1 = Path("/Users/user/Downloads")
+        path2 = Path.joinpath(path1,path)
+        path3 = str(path2)
+        # path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
+        print('here',path3)
+        document_string = docx_to_string(path3[:-1])
+        res = single_patient(document_string)
+        print('\n',res,'\n')
+        res['Link'] = path
+        output.append(res)
         print(i)
         i+=1
-        # if i == (107 + 2):
-        #     break
+        if i == (401 + 2):
+             break
 
+# df = pd.DataFrame.from_records(output)
+# df.to_excel("extract.xlsx")
 # test single docx
 # document = Document(file_path)
 # a = docx_to_string(file_path)
