@@ -561,11 +561,12 @@ def extract_patient_infos_from_directory(directory_path):
     patient_infos = []
     ignored_file_paths = []
 
-    # thuytt
+    # thuytt test quick_report2
     # for doc_clazz in doc_classes:
     #     if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
     #         file_paths = doc_classes['quick_report']
     #         bao_cao_nhanh.get_personal_information(file_paths)
+
     for doc_clazz in doc_classes:
 
         if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple':
