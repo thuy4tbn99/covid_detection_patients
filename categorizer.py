@@ -31,37 +31,43 @@ def get_all_document(directory_path):
 class DocumentClassifier:
     def __init__(self):
         pass
-        
     def check_document_type(self, document_path):
         _, file_name = os.path.split(document_path)
+        file_name =  re.sub(' +', ' ',file_name.upper())
+        # nnumber of occurrence of "BN" string found in file name
         BN_count_filename = len(re.findall(r'[B][N,n]\d{1,6}|[B][N][_]', file_name))
-        
+        # number of names found in file name
         patient_count_filename = 0
-        i = 0
-        for name in  re.finditer(r"(?<=_)((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5}))(?=_)", file_name):
-            if ' ' in name.group().split():
+        for name in  re.finditer(r"((?<=_ )|(?<=,)|(?<=_)|(?<=-)|(?<= VÀ )|(?<=BN\d{3} )|(?<=BN\d{4} )|(?<=BN\d{5} ))((([A-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ']+\s?){3,5}))((?=-)|(?=\()|(?=_)|(?=\.DOC)|(?= VÀ )|(?=,)|(?= _))", file_name):
+            if len(name.group().split()) >= 3:
                 patient_count_filename+=1
+        if patient_count_filename < 1:
+            patient_count_filename = 1 
+
         document_string = docx_to_string(document_path).lower()
         #only normal type files contain this string
         n = document_string.find("báo cáo nhanh thông tin về")
+
+        #number of patient specified in the file
         pattern = re.compile(r"(?<=báo cáo nhanh thông tin về) +\d+ +((?=trường hợp)|(?=bệnh nhân))")
         if n >= 0:
-            patient_count = document_string.count("thông tin ca bệnh")
+            patient_count = document_string.count("thông tin ca bệnh") - document_string.count("thông tin ca bệnh thứ")
             found_patient_num = re.search(pattern, document_string)
+            patient_num = 0
             if found_patient_num:
                 patient_num_string = found_patient_num.group().strip() 
                 try:
                     patient_num = int(patient_num_string)
                 except:
-                    return document_type.OTHERS
-                # if int(patient_count == patient_num) + int(patient_count_in_file_name == patient_count) +int(patient_num ==patient_count_in_file_name) < 2:
-                if patient_count != patient_num or BN_count_filename != patient_count:
-                    return document_type.OTHERS
-                if patient_num >= 2 or patient_count_filename >= 2:
+                    patient_num = 0
+            condition = (patient_count_filename == BN_count_filename) +(patient_count_filename == patient_num) + (patient_count_filename == patient_count)
+            if patient_count_filename == patient_count or condition >= 2:
+                if patient_count_filename > 1:
                     return document_type.NORMAL_MULTIPLE
-                return document_type.NORMAL_SINGLE
-            return document_type.OTHERS
-        #only quick report type files contains this tring
+                else:
+                    return document_type.NORMAL_SINGLE
+            else:
+                return document_type.OTHERS
         n = document_string.find("báo cáo nhanh")
         if n >= 0:
             f = document_string.find("thông tin người f")
