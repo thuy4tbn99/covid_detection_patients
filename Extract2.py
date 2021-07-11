@@ -204,20 +204,7 @@ def extract_positive_place(block_text):
         else:
             return 'Cộng đồng'
     return None
-# def extract_epidemiological_info(text_block):
-#     epi_info = {'epidemiology': [], 'positve_case_contact': ''}
-#     if extract_positive_date(text_block) != None:
-#         # print(extract_Ngay_duong_tinh(paragraph))
-#         epi_info['positive_date'] = extract_positive_date(text_block)
-#     if extract_epidemiology(text_block) != None:
-#         # print(extract_Dich_te(paragraph))
-#         epi_info['epidemiology'].append(extract_epidemiology(text_block))
-#     if extract_test_date(text_block) != None:
-#         # print(extract_Ngay_lay_mau(paragraph))
-#         epi_info['test_dates'] = extract_test_date(text_block)
-#     if extract_positive_case_contact(text_block) != None:
-#         epi_info['positve_case_contact'] = extract_positive_case_contact(text_block)
-#     return epi_info
+
 def single_patient(block_text):
     Ngay_lay_mau = []
     Ngay_xet_nghiem_duong_tinh = ''
@@ -244,35 +231,40 @@ def single_patient(block_text):
 
 def extract_epidemiological_info(text_block):
     global da_cach_ly
-    Ngay_lay_mau = []
-    Ngay_xet_nghiem_duong_tinh = ''
-    Dich_te = []
-    Tiep_xuc_ca_duong_tinh = []
-    Nguon_lay_nhiem = ''
-    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin' }
 
-    res = extract_positive_date(text_block)
-    if res != None:
-        epi_info['positive_date'] = res
+    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin',  }
 
-    res = extract_epidemiology(text_block)
-    if res != None:
-        epi_info['epidemiology'].append(res)
+    Thong_tin_ca_benh = text_block.split('\n')
 
-    res = extract_test_date(text_block)
-    if res != None:
-        epi_info['test_dates'].extend(res)
+    for text in Thong_tin_ca_benh:
+        res = extract_positive_date(text)
+        if res != None:
+            epi_info['positive_date'] = res
 
-    res = extract_positive_case_contact(text_block)
-    if res != None:
-        epi_info['positve_case_contact'] = res
+        res = extract_epidemiology(text)
+        if res != None:
+            epi_info['epidemiology'].append(res)
 
-    res = extract_positive_place(text_block)
-    if (res == 'Cách ly'):
-        da_cach_ly = True
-    if res != None:
-        epi_info['positive_place'] = res
+        res = extract_test_date(text)
+        if res != None:
+            epi_info['test_dates'].extend(res)
 
+        res = extract_positive_case_contact(text)
+        if res != None:
+            epi_info['positve_case_contact'] = res
+
+        res = extract_positive_place(text)
+        if (res == 'Cách ly'):
+            da_cach_ly = True
+        if res != None:
+            epi_info['positive_place'] = res
+
+    da_cach_ly = False
+
+    epi_info['test_dates'] = list(OrderedDict.fromkeys(epi_info['test_dates'] ))
+
+    if len(epi_info['test_dates']) == 0 and len(epi_info['positive_date']) != 0:
+        epi_info['test_dates'] .append(epi_info['positive_date'])
 
     return epi_info
 
