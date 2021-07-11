@@ -15,7 +15,7 @@ from datetime import timedelta
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
 # file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
-file_path = '/Users/user/Downloads/splitted_files_minh/normal_single.txt'
+file_path = '/Users/user/Downloads/splitted_files/normal_single.txt'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/HUYỆN HÓC MÔN/BN0000_HM_LÊ THỊ HOÀNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_ĐẶNG NGỌC PHƯƠNG_220621_NHÓM 4.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN00000_NGUYÊN THIÊN LỘC_26062021_BẰNG_N3.docx'
@@ -39,7 +39,7 @@ date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
 prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?'+date_regex+')'
 prefix_date_regex2 = ''
 BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
-BN_regex2 = "(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
+BN_regex2 = "(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
 def docx_to_string(docx_file):
     try:
@@ -160,7 +160,7 @@ def extract_Ngay_lay_mau(document_string):
                 if re.compile(date_regex_check1).search(match):
                     arr.extend(re.compile(date_regex).findall(match))
                 elif re.compile(date_regex_check2).search(match):
-                    if re.compile("[Nn]gày").search(match):
+                    if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return arr
     return None
@@ -180,7 +180,7 @@ def extract_Tiep_xuc_ca_duong_tinh(document_string):
     return None
 def extract_Nguon_lay_nhiem(document_string):
     regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
-    regex = "(?:[Pp]hong [Tt][oỏ][aả])|(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|"+regex_cach_ly
+    regex = "(?:[Pp]hong [Tt][oỏ][aả])|(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|"+regex_cach_ly+"|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)"
     regex = re.compile(regex)
     global da_cach_ly
     if regex.search(document_string) and da_cach_ly is False:
@@ -195,9 +195,11 @@ def extract_Nguon_lay_nhiem(document_string):
                 return 'Cách ly'
             elif re.compile("trong (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(document_string):
                 return 'Cách ly'
-        elif re.compile(BN_regex+"|"+BN_regex2).search(document_string):
+        elif re.compile(BN_regex+"|"+BN_regex2+"|(?:xử lý theo quy trình chống dịch)").search(document_string):
             print('d')
             return 'Cách ly'
+        else:
+            return 'Cộng đồng'
     return None
 def single_patient(document_string):
     Ngay_lay_mau = []
@@ -237,7 +239,7 @@ def single_patient(document_string):
 # handle data:
     da_cach_ly = False
     if Nguon_lay_nhiem == '':
-        Nguon_lay_nhiem = 'Cộng Đồng'
+        Nguon_lay_nhiem = 'Không rõ thông tin'
 
     Ngay_lay_mau = list(OrderedDict.fromkeys(Ngay_lay_mau))
 
@@ -271,11 +273,11 @@ with open(file_path, 'r', encoding= 'utf-8') as f:
         output.append(res)
         print(i)
         i+=1
-        if i == (401 + 2):
-             break
+        # if i == (55 + 2):
+        #     break
 
-# df = pd.DataFrame.from_records(output)
-# df.to_excel("extract.xlsx")
+df = pd.DataFrame.from_records(output)
+# df.to_excel("extract4.xlsx")
 # test single docx
 # document = Document(file_path)
 # a = docx_to_string(file_path)

@@ -13,7 +13,7 @@ from datetime import timedelta
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/QUẬN TÂN BÌNH/BN000_LÊ THỊ BÍCH TRÂM_30062021.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
-file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
+# file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/HUYỆN HÓC MÔN/BN0000_HM_LÊ THỊ HOÀNG_030721.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_ĐẶNG NGỌC PHƯƠNG_220621_NHÓM 4.docx'
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN00000_NGUYÊN THIÊN LỘC_26062021_BẰNG_N3.docx'
@@ -144,7 +144,7 @@ def extract_Ngay_lay_mau(document_string):
     global entry_dichte
     regex = re.compile(prefix_date_regex)
     arr = []
-    # print('entry',entry_dichte)
+    print('entry',entry_dichte)
     if entry_dichte:
         print('Đang xét dịch tễ')
     else:
@@ -250,27 +250,30 @@ def single_patient(document_string):
 
 
 # # run multiple single docx
-i = 1;
-output = []
-with open(file_path, 'r', encoding= 'utf-8') as f:
-    for line in f:
-        # print(os.path.realpath('./'))path
-        # print(line)
-        # path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
-        path = "/Users/user/Downloads/baocao_covid/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx"
-        print('here',path)
-        document_string = docx_to_string(path)
-        res = single_patient(document_string)
-        print('\n',res,'\n')
-        print(i)
-        i+=1
-        if i == (3 + 2):
-            break
+# i = 1;
+# output = []
+# with open(file_path, 'r', encoding= 'utf-8') as f:
+#     for line in f:
+#         # print(os.path.realpath('./'))path
+#         # print(line)
+#         # path = '/Users/user/Downloads/BÁO CÁO FILE WORD/'+line[15:-1]
+#         path = "/Users/user/Downloads/baocao_covid/BAO CAO NHANH F0 030721 NGUYỄN THANH TOÀN.docx"
+#         print('here',path)
+#         document_string = docx_to_string(path)
+#         # res = single_patient(document_string)
+#         # print('\n',res,'\n')
+#         print(document_string)
+#         print(i)
+        # i+=1
+        # if i == (3 + 2):
+        #     break
 
 # test single docx
-# document = Document(file_path)
-# a = docx_to_string(file_path)
-# print('\n',single_patient(a),'\n')
+file_path = "/Users/user/Downloads/baocao_covid/04-07-2021-20210707T164057Z-001/04-07-2021/BN19161_Nguyễn Anh Minh Hoàng.docx"
+document = Document(file_path)
+a = docx_to_string(file_path)
+print(a)
+print('\n',single_patient(a),'\n')
 
 
 
