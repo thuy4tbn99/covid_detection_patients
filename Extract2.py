@@ -229,8 +229,6 @@ def single_patient(block_text):
 
 # handle data:
     da_cach_ly = False
-    if Nguon_lay_nhiem == '':
-        Nguon_lay_nhiem = 'Không rõ thông tin'
 
     Ngay_lay_mau = list(OrderedDict.fromkeys(Ngay_lay_mau))
 
@@ -251,7 +249,7 @@ def extract_epidemiological_info(text_block):
     Dich_te = []
     Tiep_xuc_ca_duong_tinh = []
     Nguon_lay_nhiem = ''
-    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': '' }
+    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin' }
 
     res = extract_positive_date(text_block)
     if res != None:
