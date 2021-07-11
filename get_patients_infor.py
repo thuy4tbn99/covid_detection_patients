@@ -12,6 +12,12 @@ from dateutil import parser
 from datetime import date
 from categorizer import DocumentClassifier
 
+from pathlib import Path, PureWindowsPath
+import re
+from collections import OrderedDict
+from datetime import datetime
+from datetime import timedelta
+
 parser = argparse.ArgumentParser(description='WILDCAT Training')
 parser.add_argument('--dir', default=None,
                     type=str, metavar='DIR', help='Path to the data directory')
@@ -243,11 +249,17 @@ def split_address_normal(address_string):
 #------------------------------------------------------------
 # Extract epidemiological info
 entry_dichte = False
+entry_dichte2 = False
+da_cach_ly = False
 VN_regex_cap = "ẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ"
 VN_regex_norm = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữự"
 date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}(?:\/[0-9]{4})?"
-prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.]*?lấy mẫu)'
-BN_regex = "(?:BN ?\d+)|(?:BN (?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN (?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
+date_regex_check1 = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
+date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
+prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?'+date_regex+')'
+prefix_date_regex2 = ''
+BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
+BN_regex2 = "(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:F0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
 def extract_epidemiological_info(text_block):
     epi_info = {'epidemiology': [], 'positve_case_contact': ''}
@@ -268,70 +280,114 @@ def extract_positive_date(text_block):
     regex = "(?:kết quả.*?dương tính[^\.]+?"+date_regex+")|(?:"+date_regex+"[^\./]+kết quả.*?dương tính)"
     regex = re.compile(regex,flags=re.I)
     list_match = None
-    if regex.search(text_block):
-        list_match = regex.findall(text_block)
-        # print('ngay_duong_tinh',list_match)
-        for match in list_match:
-            arr = re.compile(date_regex).findall(match)
-        # list_match = list(OrderedDict.fromkeys(list_match))
-        return arr[-1]
+    arr = []
+    if entry_dichte:
+        return list_match
     else:
-        regex_ngay_lay_mau = re.compile(prefix_date_regex)
-        # regex_check = re.compile('')
-        if regex_ngay_lay_mau.search(text_block):
-            arr = extract_test_date(text_block)
-            return arr[-1]
-
+        if regex.search(text_block):
+            # print (document_string)
+            list_match = regex.findall(text_block)
+            print('ngay_duong_tinh',list_match)
+            for match in list_match:
+                arr = re.compile(date_regex).findall(match)
+            # list_match = list(OrderedDict.fromkeys(list_match))
+            if len(arr) > 0:
+                return arr[-1]
+            else:
+                return list_match
+        else:
+            regex_ngay_lay_mau = re.compile(prefix_date_regex)
+            if regex_ngay_lay_mau.search(text_block):
+                # print(document_string)
+                arr = extract_test_date(text_block)
+                if len(arr) > 0:
+                    print('arr',arr[-1])
+                    if(len(arr[-1])<= 2):
+                        time = datetime.strptime(arr[-1],'%d') + timedelta(days=1)
+                        return time.strftime('%d')
+                    elif (len(arr[-1])<=5):
+                        time = datetime.strptime(arr[-1], '%d/%m') + timedelta(days=1)
+                        return time.strftime('%d/%m')
+                    else:
+                        time = datetime.strptime(arr[-1], '%d/%m/%Y') + timedelta(days=1)
+                        return time.strftime('%d/%m/%Y')
+                else:
+                    return list_match
     return list_match
 
 def extract_epidemiology(text_block):
-    regex = "[Dd]ịch [Tt]ễ:?.*"
+    regex = "[Dd]ịch [Tt]ễ.*:.*"
     regex = re.compile(regex)
     global entry_dichte
-    if (regex.search(text_block) != None )| entry_dichte:
-        if re.compile('\n').search(text_block):
-            # print("co dau xuong dong")
-            if re.compile('[+]').search(text_block):
-                entry_dichte = True
+    global entry_dichte2
+    # print('entry',entry_dichte)
+    if (regex.search(text_block) != None ) or entry_dichte:
+        if len(text_block[text_block.find(':')+1:].strip()) == 0 or entry_dichte:
+            print("co dau xuong dong")
+            entry_dichte = True
+            if re.compile('[+]').search(text_block) and entry_dichte:
+                entry_dichte2 = True
                 if entry_dichte:
                     return text_block
                 else:
                     return None
             else:
-                entry_dichte = False
-                return text_block
+                # print
+                # entry_dichte = False
+                print(entry_dichte2)
+                if entry_dichte2:
+                    entry_dichte2 = False
+                    entry_dichte = False
+                if entry_dichte and entry_dichte2 is False:
+                    if regex.search(text_block) is None:
+                        entry_dichte = False
+                        return text_block
+                    else:
+                        entry_dichte = True
+                        return None
         else:
             if(text_block.find(':')):
+                entry_dichte = False
                 iter = text_block.find(':')
                 return text_block[iter+1:].strip()
     return None
 
 def extract_positive_case_contact(text_block):
-    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)"
+    regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Ll]iên quan)"
     # ([Tt]iếp xúc)
     regex = re.compile(regex)
-    match = regex.search(text_block)
-    if match:
-        list_match = re.compile(BN_regex).findall(text_block, match.end())
-        if len(list_match) == 0:
-            return None
-        else:
-            #print(text_block, list_match)
-            return list_match
+    if regex.search(text_block):
+        if re.compile("[Bb]ệnh ?[Nn]hân:").search(text_block) is None:
+            list_match = re.compile(BN_regex+"|"+BN_regex2).findall(text_block)
+            # list_match = list(OrderedDict.fromkeys(list_match))
+            print('Tiep xuc',list_match)
+            if len(list_match) == 0:
+                return None
+            else:
+                return list_match
     return None
 
 def extract_test_date(text_block):
     # regex = "([Dd]ương tính)"
+    global entry_dichte
     regex = re.compile(prefix_date_regex)
     arr = []
-    if regex.search(text_block):
-        # regex = re.compile(prefix_date_regex)
-        list_match = regex.findall(text_block)
-        # print('ngay_lay_mau',list_match)
-        for match in list_match:
-            arr.extend(re.compile(date_regex).findall(match))
-        return validate_test_dates(arr)
-    
+    # print('entry',entry_dichte)
+    if entry_dichte:
+        print('Đang xét dịch tễ')
+    else:
+        if regex.search(text_block):
+            # print (document_string)
+            # regex = re.compile(prefix_date_regex)
+            list_match = regex.findall(text_block)
+            print('ngay_lay_mau',list_match)
+            for match in list_match:
+                if re.compile(date_regex_check1).search(match):
+                    arr.extend(re.compile(date_regex).findall(match))
+                elif re.compile(date_regex_check2).search(match):
+                    if re.compile("[Nn]gày").search(match):
+                        arr.extend(re.compile(date_regex).findall(match))
+            return arr
     return None
 
 def validate_test_dates(arr):
@@ -506,11 +562,10 @@ def extract_patient_infos_from_directory(directory_path):
     ignored_file_paths = []
 
     # thuytt
-    for doc_clazz in doc_classes:
-        if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
-            file_paths = doc_classes['quick_report']
-            bao_cao_nhanh.get_personal_information(file_paths)
-    '''
+    # for doc_clazz in doc_classes:
+    #     if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
+    #         file_paths = doc_classes['quick_report']
+    #         bao_cao_nhanh.get_personal_information(file_paths)
     for doc_clazz in doc_classes:
 
         if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple':
@@ -560,7 +615,6 @@ def extract_patient_infos_from_directory(directory_path):
         with open(directory_path + "_review.txt", 'w') as out:
             for file_path in ignored_file_paths:
                 out.write("{}\n".format(file_path))
-     '''
      
             
 if __name__ == '__main__':
