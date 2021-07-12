@@ -11,14 +11,9 @@ from datetime import timedelta
 
 
 #path docx file
-# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC 24 QUẬN HUYỆN TỪ 1-7/QUẬN TÂN BÌNH/BN000_LÊ THỊ BÍCH TRÂM_30062021.docx'
-# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BN0000__HƯNG YÊN_TRẦN VĂN TĂNG_030721.docx'
-# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHỢ BÌNH ĐIỀN - NHÓM 2+3/BN0000_ LÊ LÂM THỌ_ĐINH THỊ TRIỀU_24062021.docx'
 # file_path = '/Users/user/Downloads/covid_path_split_files/arr_path_1.txt'
 # file_path = '/Users/user/Downloads/splitted_files/normal_single.txt'
-file_path = '/Users/user/Downloads/baocao_covid/04-07-2021-20210707T164057Z-001/04-07-2021_review.txt'
-# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_ĐẶNG NGỌC PHƯƠNG_220621_NHÓM 4.docx'
-# file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/BC CHUỖI CHƯA XÁC ĐỊNH/BN00000_NGUYÊN THIÊN LỘC_26062021_BẰNG_N3.docx'
+file_path = '/Users/user/Downloads/baocao_covid/04-07-2021-20210707T164057Z-001/04-07-2021_review1.txt'
 #multi
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_BN0000_01_LƯƠNG THỊ THANH THUÝ_NGUYỄN THỊ LỆ THUỶ_01072021.docx'
 
@@ -37,7 +32,7 @@ date_regex_check1 = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
 date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
 # date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
 prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?'+date_regex+')'
-prefix_date_regex2 = ''
+prefix_date_regex2 = "(?:\+? ?(?:"+date_regex+") ?:)"
 BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
 BN_regex2 = "(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
@@ -87,7 +82,7 @@ def extract_positive_date(block_text):
             else:
                 return list_match
         else:
-            regex_ngay_lay_mau = re.compile(prefix_date_regex)
+            regex_ngay_lay_mau = re.compile(prefix_date_regex+"|"+prefix_date_regex2)
             if regex_ngay_lay_mau.search(block_text):
                 # print(block_text)
                 arr = extract_test_date(block_text)
@@ -166,17 +161,21 @@ def extract_positive_place(block_text):
     if regex.search(block_text) and da_cach_ly is False:
         print('Nguon lay',block_text)
         if re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Tt]rong khu cách ly)|(?:F1)|(?:F0)|"+regex_cach_ly).search(block_text):
-            print('k')
-            return 'Cách ly'
+            print('o')
+            if re.compile("không rõ F0").findall(block_text):
+                return 'Cộng đồng'
+            else:
+                print('oke')
+                return 'Cách ly'
         elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(block_text):
             # print(re.compile("(?:[Pp]hong [Tt][oỏ][aả])").findall(block_text))
-            print('e')
+            print('k')
             if re.compile("(?:[Gg]ần) (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text) is None:
                 return 'Cách ly'
             elif re.compile("trong (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text):
                 return 'Cách ly'
         elif re.compile(BN_regex+"|"+BN_regex2+"|(?:xử lý theo quy trình chống dịch)").search(block_text):
-            print('d')
+            print('e')
             return 'Cách ly'
         else:
             return 'Cộng đồng'
@@ -202,30 +201,11 @@ def extract_test_date(block_text):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
+        elif re.compile("\+? ?(?:"+date_regex+") ?:").search(block_text):
+            arr.extend(re.compile(date_regex).findall(block_text))
+            return validate_test_dates(arr)
     return None
-def extract_positive_place(block_text):
-    regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
-    regex = "(?:[Pp]hong [Tt][oỏ][aả])|(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|"+regex_cach_ly+"|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)"
-    regex = re.compile(regex)
-    global da_cach_ly
-    if regex.search(block_text) and da_cach_ly is False:
-        print('Nguon lay',block_text)
-        if re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Tt]rong khu cách ly)|(?:F1)|(?:F0)|"+regex_cach_ly).search(block_text):
-            print('k')
-            return 'Cách ly'
-        elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(block_text):
-            # print(re.compile("(?:[Pp]hong [Tt][oỏ][aả])").findall(block_text))
-            print('e')
-            if re.compile("(?:[Gg]ần) (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text) is None:
-                return 'Cách ly'
-            elif re.compile("trong (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text):
-                return 'Cách ly'
-        elif re.compile(BN_regex+"|"+BN_regex2+"|(?:xử lý theo quy trình chống dịch)").search(block_text):
-            print('d')
-            return 'Cách ly'
-        else:
-            return 'Cộng đồng'
-    return None
+
 def validate_test_dates(arr):
     valid_arr = []
     for d in arr:
@@ -248,7 +228,9 @@ def extract_epidemiological_info(text_block):
 
     epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin', 'positive_date':'' }
 
-    Thong_tin_ca_benh = text_block.split('\n')
+    print(extract_sections(text_block, 1))
+    Thong_tin_ca_benh = extract_sections(text_block, 1).split('\n')
+    # Thong_tin_ca_benh = Thong_tin_ca_benh.split('\n')
 
     for text in Thong_tin_ca_benh:
         res = extract_positive_date(text)

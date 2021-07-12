@@ -256,7 +256,7 @@ date_regex = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}(?:\/[0-9]{4})?"
 date_regex_check1 = "[0-9]{1,2}/[0-1]{0,1}[0-9]{0,1}/[0-9]{4}"
 date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
 prefix_date_regex = '(?:lấy[^.]*?'+date_regex+')|(?:[Ll]ần.*?'+date_regex+')|(?:'+date_regex+'[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?'+date_regex+')'
-prefix_date_regex2 = ''
+prefix_date_regex2 = "(?:\+? ?(?:"+date_regex+") ?:)"
 BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
 BN_regex2 = "(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
 
@@ -319,7 +319,7 @@ def extract_positive_date(block_text):
             else:
                 return list_match
         else:
-            regex_ngay_lay_mau = re.compile(prefix_date_regex)
+            regex_ngay_lay_mau = re.compile(prefix_date_regex+"|"+prefix_date_regex2)
             if regex_ngay_lay_mau.search(block_text):
                 # print(block_text)
                 arr = extract_test_date(block_text)
@@ -401,8 +401,11 @@ def extract_positive_place(block_text):
     if regex.search(block_text) and da_cach_ly is False:
         print('Nguon lay',block_text)
         if re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Tt]rong khu cách ly)|(?:F1)|(?:F0)|"+regex_cach_ly).search(block_text):
-            print('k')
-            return 'Cách ly'
+            print('o')
+            if re.compile("không rõ F0").findall(block_text):
+                return 'Cộng đồng'
+            else:
+                return 'Cách ly'
         elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(block_text):
             # print(re.compile("(?:[Pp]hong [Tt][oỏ][aả])").findall(block_text))
             print('e')
@@ -436,6 +439,9 @@ def extract_test_date(block_text):
                 elif re.compile(date_regex_check2).search(match):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
+            return validate_test_dates(arr)
+        elif re.compile("\+? ?(?:"+date_regex+") ?:").search(block_text):
+            arr.extend(re.compile(date_regex).findall(block_text))
             return validate_test_dates(arr)
     return None
 def extract_positive_place(block_text):
@@ -538,7 +544,8 @@ def convert_to_report_format(patient_info_json):
         'test_dates': 'Ngày lấy mẫu',
         'positive_date': 'Ngày xét nghiệm (+)',
         'positve_case_contact': 'Ca F0 liên quan',
-        'epidemiology': 'Tóm tắt dịch tễ/ Ghi chú'
+        'epidemiology': 'Tóm tắt dịch tễ/ Ghi chú',
+        'positive_place': 'Nguồn lây'
     }
 
     report_json = {}
