@@ -68,24 +68,29 @@ def extract_sections(raw_text, section):
 
 def extract_basic_info(text_block):
     regex_dict = {
-        "hoTen" : "(Bệnh nhân:?.?([\w\sắằẳẵặăấầẩẫậâáàãảạđếềểễệêéèẻẽẹíìỉĩịốồổỗộôớờởỡợơóòõỏọứừửữựưúùủũụýỳỷỹỵẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ-]){2,}([\t\n(,]){1})",
+        "hoTen" : "((Bệnh nhân)[:]?.?([\w\sắằẳẵặăấầẩẫậâáàãảạđếềểễệêéèẻẽẹíìỉĩịốồổỗộôớờởỡợơóòõỏọứừửữựưúùủũụýỳỷỹỵẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ-]){2,}([\t\n(,]){1})",
         "maBN":"(BN\s?[0-9]+)",
         "namSinh":"(((sinh năm)|(SN)|(Sinh ngày))[:]*.?[\s\d\/]*\d{4})",
         "gioiTinh":"(\s?(nam|nữ|NAM|NỮ|Nam|Nữ))",
-        "CMND":"(((nhân dân)|(CCCD)):\s?\d{8,})",
+        "CMND":"(((nhân dân)|(CCCD)|(CMND)):[\s']*.?\d{8,})",
         "quocTich": "(tịch: [a-zắằẳẵặăấầẩẫậâáàãảạđếềểễệêéèẻẽẹíìỉĩịốồổỗộôớờởỡợơóòõỏọứừửữựưúùủũụýỳỷỹỵA-ZẮẰẲẴẶĂẤẦẨẪẬÂÁÀÃẢẠĐẾỀỂỄỆÊÉÈẺẼẸÍÌỈĨỊỐỒỔỖỘÔỚỜỞỠỢƠÓÒÕỎỌỨỪỬỮỰƯÚÙỦŨỤÝỲỶỸỴ\s]+)[.,\n]+",
-        "SDT":"(\d{4}.?\d{3}.?\d{3})"
+        "SDT":"((([Đđ]iện thoại)|(SDT)|(SĐT)):[\s].?[\d\s.]{10,})[.,\n(]+"
     }
 
     regex_info = {}
     for regex in regex_dict:
         if re.search(re.compile(regex_dict[regex]), text_block):
             regex_info[regex] = [m for m in re.findall(re.compile(regex_dict[regex]), text_block)][0]
-            # print('rtn_dict',regex, rtn_dict[regex])
+            
+            if regex == 'hoTen':
+                print(regex, [m for m in re.findall(re.compile(regex_dict[regex]), text_block)])
             
     if 'hoTen' not in regex_info:
+        print(text_block)
         start_idx = text_block.find('Bệnh nhân:')
         end_idx = text_block.index('(', start_idx)
+        if end_idx == -1:
+            end_idx = len(text_block)
         regex_info['hoTen'] = [text_block[start_idx : end_idx].strip()]
 
     return standardalize_basic_info(regex_info)
@@ -119,7 +124,9 @@ def standardalize_basic_info(raw_dict):
         basic_info["nationality"] = ''
     
     if 'SDT' in raw_dict:
-        basic_info["phone"] = raw_dict["SDT"].strip()
+        phone_str = raw_dict["SDT"][0]
+        start_idx = phone_str.find(":")
+        basic_info["phone"] = phone_str[start_idx + 1:].strip()
     else:
         basic_info["phone"] = ''
 
@@ -560,7 +567,8 @@ def extract_patient_infos_from_directory(directory_path):
 
     for doc_clazz in doc_classes:
 
-        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple' and doc_clazz == 'quick_report' and doc_clazz == 'quick_report2':
+        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple' \
+            and doc_clazz == 'quick_report' and doc_clazz == 'quick_report2':
             ignored_file_paths.extend(doc_classes[doc_clazz])
             continue
         
@@ -574,7 +582,7 @@ def extract_patient_infos_from_directory(directory_path):
 
                 if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
                     patient_infos_from_file = [bao_cao_nhanh.get_personal_information(file_path)]
-                    print('---> quickreport', type(patient_infos_from_file), patient_infos_from_file)
+                    print('---> quickreport', patient_infos_from_file)
                 
                 if doc_clazz == 'normal_single':
                     patient_infos_from_file = [extract_single_patient(file_path)]
@@ -591,10 +599,13 @@ def extract_patient_infos_from_directory(directory_path):
                     patient_info['file_path'] = file_path
                     patient_info['publish_date'] = publish_date
                     
-                    patient_info = convert_to_report_format(patient_info)
-                    
+                    patient_info = convert_to_report_format(patient_info)                    
                     print(patient_info)
-                    patient_infos.append(patient_info)
+                    
+                    if len(patient_info) == 0:
+                        ignored_file_paths.append(file_path)
+                    else:
+                        patient_infos.append(patient_info)
             except:
                 count += 1
                 print('---> error: ', file_path)

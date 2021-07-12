@@ -21,9 +21,13 @@ def docx_to_string(docx_file):
 def get_all_document(directory_path):
     """Return a list contains all docx file path in a given directory"""
     file_paths = []
-    for subdir, dirs, files in os.walk(directory_path):
+    for subdir, _, files in os.walk(directory_path):
         for file_name in files:
             file_path = subdir + os.sep + file_name
+            
+            if '~$' in file_name:
+                continue
+            
             if file_path.endswith(".docx"):
                 file_paths.append(file_path)
     return file_paths
@@ -84,8 +88,8 @@ class DocumentClassifier:
             "quick_report2":[],
             "others": []
         }
-        documents_path = get_all_document(directory_path)
-        for path in documents_path:
+        document_paths = get_all_document(directory_path)
+        for path in document_paths:
             t = self.check_document_type(path)
             if t == document_type.NORMAL_SINGLE:
                 doc_classes['normal_single'].append(path)
