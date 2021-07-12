@@ -263,7 +263,7 @@ BN_regex2 = "(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:[Ff]0[ _
 def extract_epidemiological_info(text_block):
     global da_cach_ly
 
-    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin' }
+    epi_info = {'epidemiology': [], 'positve_case_contact': '', 'test_dates': [], 'positive_place': 'Không rõ thông tin', 'positive_date':'' }
 
     Thong_tin_ca_benh = text_block.split('\n')
 
@@ -371,10 +371,7 @@ def extract_epidemiology(block_text):
                 iter = block_text.find(':')
                 return block_text[iter+1:].strip()
     return None
-<<<<<<< HEAD
-=======
 
->>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
 def extract_positive_case_contact(block_text):
     regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Ll]iên quan)"
     # ([Tt]iếp xúc)
@@ -384,16 +381,16 @@ def extract_positive_case_contact(block_text):
             list_match = re.compile(BN_regex+"|"+BN_regex2).findall(block_text)
             # list_match = list(OrderedDict.fromkeys(list_match))
             print('Tiep xuc',list_match)
+            for match in list_match:
+                if re.compile("(?:TIẾP XÚC)|(?:[Tt]iếp [Xx]úc)").search(match):
+                    list_match.remove(match)
+            for match in list_match:
+                if re.compile("(?:TIẾP XÚC)|(?:[Tt]iếp [Xx]úc)").search(match):
+                    list_match.remove(match)
             if len(list_match) == 0:
                 return None
             else:
                 return list_match
-<<<<<<< HEAD
-    return None
-
-def extract_test_date(block_text):
-    # regex = "([Dd]ương tính)"
-=======
     return None
 
 def extract_positive_place(block_text):
@@ -421,7 +418,6 @@ def extract_positive_place(block_text):
     return None
 
 def extract_test_date(block_text):
->>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
     global entry_dichte
     regex = re.compile(prefix_date_regex)
     arr = []
@@ -441,7 +437,6 @@ def extract_test_date(block_text):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
-<<<<<<< HEAD
     return None
 def extract_positive_place(block_text):
     regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
@@ -465,8 +460,6 @@ def extract_positive_place(block_text):
             return 'Cách ly'
         else:
             return 'Cộng đồng'
-=======
->>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
     return None
 def validate_test_dates(arr):
     valid_arr = []
