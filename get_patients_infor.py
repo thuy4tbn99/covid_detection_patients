@@ -3,7 +3,7 @@ import os
 import re
 import pandas as pd
 import json
-
+import bao_cao_nhanh
 import argparse
 
 from collections import OrderedDict
@@ -11,6 +11,12 @@ from datetime import datetime
 from dateutil import parser
 from datetime import date
 from categorizer import DocumentClassifier
+
+from pathlib import Path, PureWindowsPath
+import re
+from collections import OrderedDict
+from datetime import datetime
+from datetime import timedelta
 
 parser = argparse.ArgumentParser(description='WILDCAT Training')
 parser.add_argument('--dir', default=None,
@@ -166,7 +172,6 @@ def find_job_location(job_info):
     
     return job_info, 'NA'
     
-
 def find_address(document_string):
     """Return patient's address from patient's info stirng"""
     address = ""
@@ -366,6 +371,10 @@ def extract_epidemiology(block_text):
                 iter = block_text.find(':')
                 return block_text[iter+1:].strip()
     return None
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
 def extract_positive_case_contact(block_text):
     regex = "(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Ll]iên quan)"
     # ([Tt]iếp xúc)
@@ -379,10 +388,40 @@ def extract_positive_case_contact(block_text):
                 return None
             else:
                 return list_match
+<<<<<<< HEAD
     return None
 
 def extract_test_date(block_text):
     # regex = "([Dd]ương tính)"
+=======
+    return None
+
+def extract_positive_place(block_text):
+    regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
+    regex = "(?:[Pp]hong [Tt][oỏ][aả])|(?:[Dd]ương tính)|(?:[Tt]heo [Dd]iện)|(?:DƯƠNG TÍNH)|"+regex_cach_ly+"|(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)"
+    regex = re.compile(regex)
+    global da_cach_ly
+    if regex.search(block_text) and da_cach_ly is False:
+        print('Nguon lay',block_text)
+        if re.compile("(?:[Tt]iếp [Xx]úc (?:[Gg]ần)?)|(?:[Tt]rong khu cách ly)|(?:F1)|(?:F0)|"+regex_cach_ly).search(block_text):
+            print('k')
+            return 'Cách ly'
+        elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(block_text):
+            # print(re.compile("(?:[Pp]hong [Tt][oỏ][aả])").findall(block_text))
+            print('e')
+            if re.compile("(?:[Gg]ần) (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text) is None:
+                return 'Cách ly'
+            elif re.compile("trong (?:(?:(?:[a-z"+VN_regex_norm+"]+) ){1,4})(?:[Pp]hong [Tt][oỏ][aả])").search(block_text):
+                return 'Cách ly'
+        elif re.compile(BN_regex+"|"+BN_regex2+"|(?:xử lý theo quy trình chống dịch)").search(block_text):
+            print('d')
+            return 'Cách ly'
+        else:
+            return 'Cộng đồng'
+    return None
+
+def extract_test_date(block_text):
+>>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
     global entry_dichte
     regex = re.compile(prefix_date_regex)
     arr = []
@@ -402,6 +441,7 @@ def extract_test_date(block_text):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
+<<<<<<< HEAD
     return None
 def extract_positive_place(block_text):
     regex_cach_ly = "(?:(?:chuyển.*)?[Cc][Áá][Cc][Hh] [Ll][Yy].*(?:do))"
@@ -425,6 +465,8 @@ def extract_positive_place(block_text):
             return 'Cách ly'
         else:
             return 'Cộng đồng'
+=======
+>>>>>>> 3a3ea677d45677e2a850c55fa547dfce3f852eba
     return None
 def validate_test_dates(arr):
     valid_arr = []
@@ -452,7 +494,6 @@ def extract_publish_date(directory_path):
 def extract_relative_filepath(file_path):
     file_name = file_path[file_path.rindex('/')+1:]
     
-
 def extract_patient_code_from_filepath(file_path):
     file_name = file_path[file_path.rindex('/')+1:]
     matches = re.compile("(?:BN ?\d+)|(?:Bn ?\d+)").findall(file_name)
@@ -538,7 +579,6 @@ def export_to_excel(patient_infos, publish_date, ofile_path):
     print('### Save data to ', ofile_path)
     df[cols].to_excel(ofile_path, sheet_name=publish_date, index=False)
     
-  
 # Multiple patients
 def extract_multiple_patients(file_path):
     document = Document(file_path)
@@ -560,7 +600,6 @@ def extract_multiple_patients(file_path):
         patient_infos.append(patient_info)
         
     return patient_infos
-
 
 def remove_last_line(s):
     return s[:s.rfind('\n')]
@@ -596,9 +635,11 @@ def extract_patient_infos_from_directory(directory_path):
     count = 0
     patient_infos = []
     ignored_file_paths = []
-    
+
+
     for doc_clazz in doc_classes:
-        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple':
+
+        if doc_clazz != 'normal_single' and doc_clazz != 'normal_multiple' and doc_clazz == 'quick_report' and doc_clazz == 'quick_report2':
             ignored_file_paths.extend(doc_classes[doc_clazz])
             continue
         
@@ -609,6 +650,10 @@ def extract_patient_infos_from_directory(directory_path):
             try:
                 print('-'*100, )
                 print('@', file_path)
+
+                if doc_clazz == 'quick_report' or doc_clazz == 'quick_report2':
+                    patient_infos_from_file = [bao_cao_nhanh.get_personal_information(file_path)]
+                    print('---> quickreport', type(patient_infos_from_file), patient_infos_from_file)
                 
                 if doc_clazz == 'normal_single':
                     patient_infos_from_file = [extract_single_patient(file_path)]
@@ -645,6 +690,7 @@ def extract_patient_infos_from_directory(directory_path):
         with open(directory_path + "_review.txt", 'w') as out:
             for file_path in ignored_file_paths:
                 out.write("{}\n".format(file_path))
+     
             
 if __name__ == '__main__':
     global args
