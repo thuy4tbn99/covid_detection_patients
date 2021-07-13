@@ -65,6 +65,8 @@ def extract_sections(raw_text, section):
       end = len(raw_text)
    section_string = raw_text[begin:end]
    return section_string
+def contain_digit(inputString):
+    return any(char.isdigit() for char in inputString)
 
 def extract_basic_info(text_block):
     regex_dict = {
@@ -94,6 +96,9 @@ def standardalize_basic_info(raw_dict):
     basic_info = {}
     basic_info['doc_type'] = 'bccabenh'
     basic_info["name"] = raw_dict["hoTen"][0][10:].replace('(', '').strip()
+
+    if contain_digit(basic_info['name']):
+        basic_info['name'] = ""
 
     if 'maBN' in raw_dict:
         basic_info["patient_code"] = raw_dict["maBN"].strip()
@@ -510,7 +515,8 @@ def convert_to_report_format(patient_info_json):
         'test_dates': 'Ngày lấy mẫu',
         'positive_date': 'Ngày xét nghiệm (+)',
         'positve_case_contact': 'Ca F0 liên quan',
-        'epidemiology': 'Tóm tắt dịch tễ/ Ghi chú'
+        'epidemiology': 'Tóm tắt dịch tễ/ Ghi chú',
+        'file_path': 'Đường dẫn file'
     }
 
     report_json = {}
@@ -538,7 +544,8 @@ def export_to_excel(patient_infos, publish_date, ofile_path):
         'Giới', 'Nghề nghiệp', 'Nơi làm việc/học tập', 'Thôn, xóm, đường(thường trú)',
         'Xã/Phường(thường trú)', 'Quận/Huyện(thường trú)', 'Tỉnh/TP(thường trú)',
         'Tỉnh/TP báo cáo ca bệnh', 'Ngày lấy mẫu', 'Ngày xét nghiệm (+)', 
-        'Số điện thoại [bệnh nhân]', 'Tóm tắt dịch tễ/ Ghi chú', 'CMND', 'Ca F0 liên quan'
+        'Số điện thoại [bệnh nhân]', 'Tóm tắt dịch tễ/ Ghi chú', 'CMND', 'Ca F0 liên quan',
+        'Đường dẫn file'
     ]
     
     print('### Save data to ', ofile_path)
@@ -637,7 +644,7 @@ def extract_patient_infos_from_directory(directory_path):
                     
                     patient_info = convert_to_report_format(patient_info)
                     
-                    print(patient_info)
+                    # print(patient_info)
                     patient_infos.append(patient_info)
             except:
                 count += 1
