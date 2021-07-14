@@ -6,7 +6,6 @@ import json
 import bao_cao_nhanh
 import argparse
 
-from collections import OrderedDict
 from datetime import datetime
 from dateutil import parser
 from datetime import date
@@ -18,10 +17,10 @@ from datetime import datetime
 from datetime import timedelta
 
 parser = argparse.ArgumentParser(description='WILDCAT Training')
-parser.add_argument('--dir', default=None,
+parser.add_argument('-i', '--input-dir', default=None,
                     type=str, metavar='DIR', help='Path to the data directory')
-# parser.add_argument('-o', "--output_file", default=None,
-#                     type=str, metavar='OF', help='Path to the output file')
+parser.add_argument('-o', "--output-dir", default=None,
+                     type=str, metavar='OD', help='Path to the output directory')
 
 today_date = date.today()
 
@@ -444,7 +443,6 @@ def is_valid_patient_code(patient_code):
 
 def infer_age_info(birthyear):
     age = today_date.year - birthyear
-    age_group = ''
     if age < 18:
         return age, '1 (< 18)'
     elif age <= 40:
@@ -550,10 +548,9 @@ def split_normal_multiple(raw_text):
 # ----------------------------------------
 # input: directory path
 # output: a excel file as required
-def extract_patient_infos_from_directory(directory_path):
+def extract_patient_infos_from_directory(directory_path, output_dir):
     doc_classifier = DocumentClassifier()
     doc_classes, doc_sizes = doc_classifier.categorize(directory_path)
-    print(doc_sizes)
     
     file_paths = doc_classes['normal_single']
     publish_date, folder_name = extract_publish_date(directory_path)
@@ -572,8 +569,8 @@ def extract_patient_infos_from_directory(directory_path):
         
         file_paths = doc_classes[doc_clazz]
         print('\n', '*'*100)
-
-        for file_path in file_paths:        
+    
+        for file_path in file_paths:
             try:
                 print('-'*100, )
                 print('@', file_path)
@@ -613,11 +610,14 @@ def extract_patient_infos_from_directory(directory_path):
     print('Info', doc_sizes)
     
     # Convert to the excel format
-    export_to_excel(patient_infos, folder_name, directory_path + '.xlsx')
+    time_str = datetime.now().strftime("%Y%m%d%H%M%S")
+    excel_file_path = os.path.join(output_dir, 'HCM_' + time_str + '.xlsx')
+    export_to_excel(patient_infos, folder_name,excel_file_path )
     
     # Log ignored file paths
     if len(ignored_file_paths) > 0:
-        with open(directory_path + "_review.txt", 'w') as out:
+        review_file_path = os.path.join(output_dir, 'HCM_' + time_str + '_review.txt')
+        with open(review_file_path, 'w') as out:
             for file_path in ignored_file_paths:
                 out.write("{}\n".format(file_path))
      
@@ -626,8 +626,7 @@ if __name__ == '__main__':
     global args
     args = parser.parse_args()
     print(vars(args))
-    
-    directory_path = args.dir
-    extract_patient_infos_from_directory(directory_path)
+
+    extract_patient_infos_from_directory(args.input_dir, args.output_dir)
 
 
