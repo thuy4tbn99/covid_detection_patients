@@ -11,8 +11,8 @@ from datetime import timedelta
 
 
 #path docx file
-file_path = '/Users/user/Downloads/splitted_files/normal_single.txt'
-# file_path = '/Users/user/Downloads/splitted_files/quick_report2.txt'
+# file_path = '/Users/user/Downloads/splitted_files/normal_single.txt'
+file_path = '/Users/user/Downloads/splitted_files/quick_report2.txt'
 # file_path = '/Users/user/Downloads/baocao_covid/04-07-2021-20210707T164057Z-001/04-07-2021_review1.txt'
 #multi
 # file_path = '/Users/user/Downloads/BÁO CÁO FILE WORD/ BC CHUỖI VỰA VE CHAI/BN0000_BN0000_01_LƯƠNG THỊ THANH THUÝ_NGUYỄN THỊ LỆ THUỶ_01072021.docx'
@@ -34,7 +34,7 @@ date_regex_check2 = "[0-3]{0,1}[0-9]{0,1}/[0-1]{0,1}[0-9]{0,1}"
 regex_positive_date = "(?:(?:kết quả)?[^\.\n0-9]*[Dd]ương tính[^\.\n(]+?" + date_regex + ")|(?:" + date_regex + "[^\.\n0-9)]+(?:kết quả)?[^\.\n)]*?[Dd]ương tính)"
 prefix_date_regex = "(?:lấy[^.]*?"+date_regex+")|(?:[Ll]ần.*?"+date_regex+")|(?:"+date_regex+"[^\.)]*?lấy mẫu)|(?:[Ll][0-9].*?"+date_regex+")"
 prefix_date_regex2 = "(?:\+? ?(?:"+date_regex+") ?:)|(?:(?:\+? ?(?:"+date_regex+") ?) (?:[Tt]ại))"
-prefix_date_regex3 = "(?:xét nghiệm [^\.,\n]*?"+date_regex+"[^\.,]*?)|(?:XN [^\.,]*? "+date_regex+"[^\.)]*?)|(?:"+date_regex+"[^\.,)]*?XN)"
+prefix_date_regex3 = "(?:[Xx]ét nghiệm [^\.,\n]*?"+date_regex+"[^\.,]*?)|(?:XN [^\.,]*? "+date_regex+"[^\.)]*?)|(?:"+date_regex+"[^\.,)]*?XN)|(?:"+date_regex+"[^\.,\n]*?[Xx]ét nghiệm)"
 prefix_date_regex4 = "(?:"+date_regex+"[^\.,)]*?XN)"
 BN_regex = "(?:BN[ _]?\d+)|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:BN[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})|(?:[Bb]ệnh nhân ?(?:(?:[A-Z"+VN_regex_cap+"]{1,}?\s)){2,5})"
 BN_regex2 = "(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"]{1,})\s?){2,5})|(?:[Ff]0[ _]?(?:(?:[A-Z"+VN_regex_cap+"][a-z"+VN_regex_norm+"]{1,})\s?){2,5})"
@@ -64,8 +64,8 @@ def extract_sections(document_string, section):
       end = len(document_string)
 
    section_string = document_string[begin:end]
-   return section_string
-   # return document_string
+   # return section_string
+   return document_string
 
 
 def extract_positive_date(block_text):
@@ -200,13 +200,13 @@ def extract_test_date(block_text):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
-        elif re.compile("(?:\+? ?(?:"+date_regex+") ?:)").search(block_text):
-            print('ngay :')
-            print(block_text)
-            list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?:)").findall(block_text)
-            for match in list_match:
-                arr.extend(re.compile(date_regex).findall(match))
-            return validate_test_dates(arr)
+        # elif re.compile("(?:\+? ?(?:"+date_regex+") ?:)").search(block_text):
+        #     print('ngay :')
+        #     print(block_text)
+        #     list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?:)").findall(block_text)
+        #     for match in list_match:
+        #         arr.extend(re.compile(date_regex).findall(match))
+        #     return validate_test_dates(arr)
         elif re.compile("(?:\+? ?(?:"+date_regex+") ?) (?:[Tt]ại)").search(block_text):
             print('ngay : tai')
             list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?) (?:[Tt]ại)").findall(block_text)
@@ -240,8 +240,8 @@ def validate_test_dates(arr):
 def extract_hospital(text_block):
     list_match = []
     regex_hos = "(?:[Cc]huyển (?:[a-z"+VN_regex_norm+"]* ?){1,4}(?:bệnh viện)?(?:bv)?(?:[0-9a-z"+VN_regex_norm+"]* ?){1,})"
-    regex_hos2 = "(?:cách ly tại (?:(?:(?:[0-9a-z"+VN_regex_norm+"]+) *){0,5}))"
-    regex_hos3 = "(?:[Đđ]ưa (?:[a-z"+VN_regex_norm+"]* ?){1,4}(?:bệnh viện)?(?:bv)?(?:[0-9a-z"+VN_regex_norm+"]* ?){1,})"
+    regex_hos2 = "(?:cách ly tại *:? *(?:(?:(?:[0-9a-z"+VN_regex_norm+"]+) *){0,5}))"
+    regex_hos3 = "(?:[Đđ]ưa *(?:[a-z"+VN_regex_norm+"]* ?){1,4}(?:bệnh viện)?(?:bv)?(?:[0-9a-z"+VN_regex_norm+"]* ?){1,})"
     hospital = ['Bệnh viện Dã chiến Củ Chi', 'Bệnh viện Bệnh Nhiệt đới TPHCM',
        'Bệnh viện điều trị COVID-19 Cần Giờ', 'TTYT Bến Cầu',
        'Bệnh viện Nhi Đồng 2 - TP HCM',
@@ -258,7 +258,8 @@ def extract_hospital(text_block):
        'Bệnh viện dã chiến Củ Chi', 'Bệnh viện Bình Dân',
        'Bệnh viện quận 8', 'Bệnh viện quận 10',
        'Bệnh viện Dã chiến Thu Dung số 2',
-       'Dã chiến Thu Dung 3', 'Bệnh viện Thủ Đức', 'ktx đhqg', 'Bệnh viện covid cần giờ' , 'Bệnh viện Thu Dung' , 'Bệnh viện Bình Chánh']
+       'Dã chiến Thu Dung 3', 'Bệnh viện Thủ Đức', 'ktx đhqg', 'Bệnh viện covid cần giờ' , 'Bệnh viện Thu Dung' , 'Bệnh viện Bình Chánh', 'Khu A số 1 Lê Quý Đôn, phường Đông Hòa, TP.Dĩ An, Bình Dương',
+        'KTX Đại học Quốc gia']
     if re.compile(regex_hos+"|"+regex_hos2+"|"+regex_hos3).search(text_block.lower()):
         list_match.extend(re.compile(regex_hos+"|"+regex_hos2+"|"+regex_hos3).findall(text_block.lower()))
     # print('hos',list_match)
@@ -382,12 +383,12 @@ with open(file_path, 'r', encoding= 'utf-8') as f:
         output.append(res)
         print(i)
         i+=1
-        # if i == (15 + 2):
-        #     break
+        if i == (80 + 2):
+            break
 
 
 df = pd.DataFrame.from_records(output)
-df.to_excel("/Users/user/Desktop/test/extract8.xlsx")
+# df.to_excel("/Users/user/Desktop/test/extract9.xlsx")
 # test single docx
 # file_path = "/Users/user/Downloads/baocao_covid/04-07-2021-20210707T164057Z-001/04-07-2021/BN19095_Tống Hữu Lộc.docx"
 # document = Document(file_path)
@@ -395,48 +396,5 @@ df.to_excel("/Users/user/Desktop/test/extract8.xlsx")
 # print('\n',single_patient(a),'\n')
 
 
-
-
-# regex = re.compile(BN_regex)
-# list_match = regex.findall('Ngày lấy mẫu xét nghiệm: lấy mẫu lần 1 vào trưa ngày 21/06/2021 tại KCL là  trường học quận 1 (BN không biết tên KCL và địa chỉ) do tiếp xúc gần với BN12399 Lê Thị Ngọc Hương.')
-# print(list_match)
-
-# def extract_Dich_te(paragraph):
-#     regex = "[Dd]ịch [Tt]ễ:?.*"
-#     regex = re.compile(regex)
-#     if regex.search(paragraph):
-#         if re.compile('\n').search(paragraph):
-#             return None
-#         else:
-#             if(paragraph.find(':')):
-#                 iter = paragraph.find(':')
-#                 return paragraph[iter:].strip()
-#     return None
-#
-# def multi_patient(document):
-#     i = 0
-#     documents = []
-#     doc = ''
-#     for paragraph in document.paragraphs:
-#         # print(paragraph)
-#         if 'Thông tin ca bệnh' in paragraph:
-#             documents.append(doc)
-#             doc = Document(docx=None)
-#             print('changeeeee')
-#             continue
-#         # print(type(doc))
-#         if 'Các hoạt động đã triển khai' in paragraph:
-#             documents.append(doc)
-#             break;
-#         if type(doc) != str:
-#             doc.add_paragraph(paragraph)
-#
-#     for d in range(1,len(documents)):
-#         print(len(documents))
-#         print(single_patient(documents[d]))
-    # print(documents[1].paragraphs)
-    # for p in documents[4].paragraphs:
-    #     print(p)
-# multi_patient(document)
 
 

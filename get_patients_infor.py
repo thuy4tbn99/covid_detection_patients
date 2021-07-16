@@ -454,12 +454,12 @@ def extract_test_date(block_text):
                     if re.compile("(?:[Nn]gày)|(?:[Ll]ần ?\d{1} ?: ?"+date_regex_check2+")").search(match):
                         arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
-        elif re.compile("(?:\+? ?(?:"+date_regex+") ?:)").search(block_text):
-            print('ngay :')
-            list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?:)").findall(block_text)
-            for match in list_match:
-                arr.extend(re.compile(date_regex).findall(match))
-            return validate_test_dates(arr)
+        # elif re.compile("(?:\+? ?(?:"+date_regex+") ?:)").search(block_text):
+        #     print('ngay :')
+        #     list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?:)").findall(block_text)
+        #     for match in list_match:
+        #         arr.extend(re.compile(date_regex).findall(match))
+        #     return validate_test_dates(arr)
         elif re.compile("(?:\+? ?(?:"+date_regex+") ?) (?:[Tt]ại)").search(block_text):
             print('ngay : tai')
             list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?) (?:[Tt]ại)").findall(block_text)
