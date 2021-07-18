@@ -421,7 +421,6 @@ def extract_positive_place(block_text):
             if re.compile("không rõ F0").findall(block_text):
                 return 'Cộng đồng'
             else:
-                print('oke')
                 return 'Cách ly'
         elif re.compile("[Pp]hong [Tt][oỏ][aả]").search(block_text):
             print('k')
@@ -456,6 +455,7 @@ def extract_test_date(block_text):
             return validate_test_dates(arr)
         # elif re.compile("(?:\+? ?(?:"+date_regex+") ?:)").search(block_text):
         #     print('ngay :')
+        #     print(block_text)
         #     list_match = re.compile("(?:\+? ?(?:"+date_regex+") ?:)").findall(block_text)
         #     for match in list_match:
         #         arr.extend(re.compile(date_regex).findall(match))
@@ -467,6 +467,7 @@ def extract_test_date(block_text):
                 arr.extend(re.compile(date_regex).findall(match))
             return validate_test_dates(arr)
         elif re.compile(prefix_date_regex3).search(block_text):
+            print('xn')
             list_match = re.compile(prefix_date_regex3).findall(block_text)
             for match in list_match:
                 arr.extend(re.compile(date_regex).findall(match))
@@ -492,6 +493,8 @@ def validate_test_dates(arr):
 def extract_hospital(text_block):
     list_match = []
     regex_hos = "(?:[Cc]huyển (?:[a-z"+VN_regex_norm+"]* ?){1,4}(?:bệnh viện)?(?:bv)?(?:[0-9a-z"+VN_regex_norm+"]* ?){1,})"
+    regex_hos2 = "(?:cách ly tại *:? *(?:(?:(?:[0-9a-z"+VN_regex_norm+"]+) *){0,5}))"
+    regex_hos3 = "(?:[Đđ]ưa *(?:[a-z"+VN_regex_norm+"]* ?){1,4}(?:bệnh viện)?(?:bv)?(?:[0-9a-z"+VN_regex_norm+"]* ?){1,})"
     hospital = ['Bệnh viện Dã chiến Củ Chi', 'Bệnh viện Bệnh Nhiệt đới TPHCM',
        'Bệnh viện điều trị COVID-19 Cần Giờ', 'TTYT Bến Cầu',
        'Bệnh viện Nhi Đồng 2 - TP HCM',
@@ -500,7 +503,7 @@ def extract_hospital(text_block):
        'Bệnh viện Huyện Củ Chi',
        'bệnh Nhiệt đới thành phố Hồ Chí Minh.', 'COVID19 Cần Giờ',
        'Bệnh viện Phạm Ngọc Thạch', 'Bệnh viện Chợ Rẫy',
-       'Bệnh viện điều trị', 'Bệnh viện Trưng Vương',
+        'Bệnh viện Trưng Vương',
        'Bệnh viện Nhi Đồng 2 - TP HCM ', 'Bệnh viện Trưng Vương',
        'Bệnh viện Đa khoa Thủ Đức', 'Bệnh viện dã chiến Bình Chánh',
        'Bệnh viện dã chiến quận 9', 'Bệnh viện Nguyễn Trãi',
@@ -508,16 +511,20 @@ def extract_hospital(text_block):
        'Bệnh viện dã chiến Củ Chi', 'Bệnh viện Bình Dân',
        'Bệnh viện quận 8', 'Bệnh viện quận 10',
        'Bệnh viện Dã chiến Thu Dung số 2',
-       'Dã chiến Thu Dung 3', 'Bệnh viện Thủ Đức', 'ktx đhqg', 'Bệnh viện covid cần giờ' , 'Bệnh viện Thu Dung' , 'Bệnh viện Bình Chánh']
-    if re.compile(regex_hos).search(text_block):
-        list_match.extend(re.compile(regex_hos).findall(text_block))
-    print('hos',list_match)
+       'Dã chiến Thu Dung 3', 'Bệnh viện Thủ Đức', 'ktx đhqg', 'Bệnh viện covid cần giờ' , 'Bệnh viện Thu Dung' , 'Bệnh viện Bình Chánh', 'Khu A số 1 Lê Quý Đôn, phường Đông Hòa, TP.Dĩ An, Bình Dương',
+        'KTX Đại học Quốc gia']
+    if re.compile(regex_hos+"|"+regex_hos2+"|"+regex_hos3).search(text_block.lower()):
+        list_match.extend(re.compile(regex_hos+"|"+regex_hos2+"|"+regex_hos3).findall(text_block.lower()))
+    # print('hos',list_match)
     for index, h in enumerate(hospital):
         for match in list_match:
             hos = h.strip().replace('Bệnh viện ','').lower()
             if hos in match:
                 print(hos)
                 return hospital[index]
+            elif 'điều trị' in match:
+                if re.compile("(?:BV)|(?:[Bb]ệnh viện)").search(match):
+                    return 'Bệnh viện điều trị'
     return None
 
 def extract_symptom(text_block):
